@@ -8,14 +8,14 @@ if (_LibAnim and _LibAnim >= Version) then
 end
 
 local pi = math.pi
-local cos = cos
-local sin = sin
-local sqrt = sqrt
-local pairs = pairs
-local floor = floor
+local cos = math.cos
+local sin = math.sin
+local sqrt = math.sqrt
+local floor = math.floor
 local tinsert = table.insert
 local tremove = table.remove
 local lower = string.lower
+local pairs = pairs
 local Updater = CreateFrame("StatusBar")
 local Texture = Updater:CreateTexture()
 local FontString = Updater:CreateFontString()
@@ -66,212 +66,318 @@ local Get = {
 	["vertex"] = Texture.GetVertexColor,
 }
 
-local Easing = {
-	["none"] = function(t, b, c, d)
-		return c * t / d + b
-	end,
+-- Linear
+local Linear = function(t, b, c, d)
+	return c * t / d + b
+end
+
+-- Quadratic
+local InQuadratic = function(t, b, c, d)
+	t = t / d
 	
-	["in"] = function(t, b, c, d) -- Deprecated
-		t = t / d
-		
-		return c * t * t + b
-	end,
+	return c * (t ^ 2) + b
+end
+
+local OutQuadratic = function(t, b, c, d)
+	t = t / d
 	
-	["out"] = function(t, b, c, d) -- Deprecated
-		t = t / d
-		
-		return -c * t * (t - 2) + b
-	end,
+	return -c * t * (t - 2) + b
+end
+
+local InOutQuadratic = function(t, b, c, d)
+	t = t / d * 2
 	
-	["inout"] = function(t, b, c, d) -- Deprecated
-		t = t / (d / 2)
+	if (t < 1) then
+		return c / 2 * (t ^ 2) + b
+	else
+		return -c / 2 * ((t - 1) * (t - 3) - 1) + b
+	end
+end
+
+-- Cubic
+local InCubic = function(t, b, c, d)
+	t = t / d
+	
+	return c * (t ^ 3) + b
+end
+
+local OutCubic = function(t, b, c, d)
+	t = t / d - 1
+	
+	return c * (t ^ 3 + 1) + b
+end
+
+local InOutCubic = function(t, b, c, d)
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * (t ^ 3) + b
+	else
+		t = t - 2
 		
-		if (t < 1) then
-			return c / 2 * t * t + b
-		end
+		return c / 2 * (t ^ 3 + 2) + b
+	end
+end
+
+-- Quartic
+local InQuartic = function(t, b, c, d)
+	t = t / d
+	
+	return c * (t ^ 4) + b
+end
+
+local OutQuartic = function(t, b, c, d)
+	t = t / d - 1
+	
+	return -c * (t ^ 4 - 1) + b
+end
+
+local InOutQuartic = function(t, b, c, d)
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * t ^ 4 + b
+	else
+		t = t - 2
 		
+		return -c / 2 * (t ^ 4 - 2) + b
+	end
+end
+
+-- Quintic
+local InQuintic = function(t, b, c, d)
+	t = t / d
+	
+	return c * (t ^ 5) + b
+end
+
+local OutQuintic = function(t, b, c, d)
+	t = t / d - 1
+	
+	return c * (t ^ 5 + 1) + b
+end
+
+local InOutQuintic = function(t, b, c, d)
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * t ^ 5 + b
+	else
+		t = t - 2
+		
+		return c / 2 * (t ^ 5 + 2) + b
+	end
+end
+
+-- Sinusoidal
+local InSinusoidal = function(t, b, c, d)
+	return -c * cos(t / d * (pi / 2)) + c + b
+end
+
+local OutSinusoidal = function(t, b, c, d)
+	return c * sin(t / d * (pi / 2)) + b
+end
+
+local InOutSinusoidal = function(t, b, c, d)
+	return -c / 2 * (cos(pi * t / d) - 1) + b
+end
+
+-- Exponential
+local InExponential = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	else
+		return c * (2 ^ (10 * (t / d - 1))) + b - c * 0.001
+	end
+end
+
+local OutExponential = function(t, b, c, d)
+	if (t == d) then
+		return b + c
+	else
+		return c * 1.001 * (-(2 ^ (-10 * t / d)) + 1) + b
+	end
+end
+
+local InOutExponential = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	end
+	
+	if (t == d) then
+		return b + c
+	end
+	
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * (2 ^ (10 * (t - 1))) + b - c * 0.0005
+	else
 		t = t - 1
-		return -c / 2 * (t * (t - 2) - 1) + b
-	end,
+		
+		return c / 2 * 1.0005 * (-(2 ^ (-10 * t)) + 2) + b
+	end
+end
+
+-- Circular
+local InCircular = function(t, b, c, d)
+	t = t / d
 	
-	["bounce"] = function(t, b, c, d) -- Deprecated
-		t = t / d
-		
-		if (t < (1 / 2.75)) then
-			return c * (7.5625 * t * t) + b
-		elseif (t < (2 / 2.75)) then
-			t = t - (1.5 / 2.75)
-			
-			return c * (7.5625 * t * t + 0.75) + b
-		elseif (t < (2.5 / 2.75)) then
-			t = t - (2.25 / 2.75)
-			
-			return c * (7.5625 * t * t + 0.9375) + b
-		else
-			t = t - (2.625 / 2.75)
-			
-			return c * (7.5625 * (t) * t + 0.984375) + b
-		end
-	end,
+	return (-c * (sqrt(1 - t * t) - 1) + b)
+end
+
+local OutCircular = function(t, b, c, d)
+	t = t / d - 1
 	
-	-- Quadratic
-	["in-quadratic"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * t * t + b
-	end,
+	return (c * sqrt(1 - t * t) + b)
+end
+
+local InOutCircular = function(t, b, c, d)
+	t = t / d * 2
 	
-	["out-quadratic"] = function(t, b, c, d)
-		t = t / d
+	if (t < 1) then
+		return -c / 2 * (sqrt(1 - t * t) - 1) + b
+	else
+		t = t - 2
 		
-		return -c * t * (t - 2) + b
-	end,
+		return c / 2 * (sqrt(1 - t * t) + 1) + b
+	end
+end
+
+-- Bounce
+local OutBounce = function(t, b, c, d)
+	t = t / d
 	
-	["inout-quadratic"] = function(t, b, c, d)
-		t = t / (d / 2)
+	if (t < (1 / 2.75)) then
+		return c * (7.5625 * t * t) + b
+	elseif (t < (2 / 2.75)) then
+		t = t - (1.5 / 2.75)
 		
-		if (t < 1) then
-			return c / 2 * t * t + b
-		end
+		return c * (7.5625 * t * t + 0.75) + b
+	elseif (t < (2.5 / 2.75)) then
+		t = t - (2.25 / 2.75)
 		
+		return c * (7.5625 * t * t + 0.9375) + b
+	else
+		t = t - (2.625 / 2.75)
+		
+		return c * (7.5625 * t * t + 0.984375) + b
+	end
+end
+
+local InBounce = function(t, b, c, d)
+	return c - OutBounce(d - t, 0, c, d) + b
+end
+
+local InOutBounce = function(t, b, c, d)
+	if (t < d / 2) then
+		return InBounce(t * 2, 0, c, d) * 0.5 + b
+	else
+		return OutBounce(t * 2 - d, 0, c, d) * 0.5 + c * 0.5 + b
+	end
+end
+
+-- Elastic
+local InElastic = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	end
+	
+	t = t / d
+	
+	if (t == 1) then
+		return b + c
+	end
+	
+	local a = c
+	local p = d * 0.3
+	local s = p / 4
+	
+	t = t - 1
+	
+	return -(a * 2 ^ (10 * t) * sin((t * d - s) * (2 * pi) / p)) + b
+end
+
+local OutElastic = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	end
+	
+	t = t / d
+	
+	if (t == 1) then
+		return b + c
+	end
+	
+	local a = c
+	local p = d * 0.3
+	local s = p / 4
+	
+	return a * 2 ^ (-10 * t) * sin((t * d - s) * (2 * pi) / p) + c + b
+end
+
+local InOutElastic = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	end
+	
+	t = t / d * 2
+	
+	if (t == 2) then
+		return b + c
+	end
+	
+	local a = c
+	local p = d * (0.3 * 1.5)
+	local s = p / 4
+	
+	if (t < 1) then
 		t = t - 1
-		return -c / 2 * (t * (t - 2) - 1) + b
-	end,
-	
-	-- Cubic
-	["in-cubic"] = function(t, b, c, d)
-		t = t / d
 		
-		return c * (t ^ 3) + b
-	end,
-	
-	["out-cubic"] = function(t, b, c, d)
-		t = t / d
+		return -0.5 * (a * 2 ^ (10 * t) * sin((t * d - s) * (2 * pi) / p)) + b
+	else
+		t = t - 1
 		
-		return c * (((t - 1) ^ 3) + 1) + b
-	end,
-	
-	["inout-cubic"] = function(t, b, c, d)
-		t = t / d
-		
-		if ((t / 2) < 1) then
-			return c / 2 * (t ^ 3) + b
-		end
-		
-		return c * (((t - 1) ^ 3) + 1) + b
-	end,
-	
-	-- Quartic
-	["in-quartic"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * (t ^ 4) + b
-	end,
-	
-	["out-quartic"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * (((t - 1) ^ 4) + 1) + b
-	end,
-	
-	["inout-quartic"] = function(t, b, c, d)
-		t = t / d
-		
-		if ((t / 2) < 1) then
-			return c / 2 * (t ^ 4) + b
-		end
-		
-		return c * (((t - 1) ^ 4) + 1) + b
-	end,
-	
-	-- Quintic
-	["in-quintic"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * (t ^ 5) + b
-	end,
-	
-	["out-quintic"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * (((t - 1) ^ 5) + 1) + b
-	end,
-	
-	["inout-quintic"] = function(t, b, c, d)
-		t = t / d
-		
-		if ((t / 2) < 1) then
-			return c / 2 * (t ^ 5) + b
-		end
-		
-		return c * (((t - 1) ^ 5) + 1) + b
-	end,
-	
-	-- Sinusoidal
-	["in-sinusoidal"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * (1 - cos(t * (pi / 2))) + b
-	end,
-	
-	["out-sinusoidal"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * sin(t * (pi / 2)) + b
-	end,
-	
-	["inout-sinusoidal"] = function(t, b, c, d)
-		t = t / d
-		
-		return (c / 2) * (1 - cos(pi * t)) + b
-	end,
-	
-	-- Exponential
-	["in-exponential"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * (2 ^ (10 * t - 1)) + b
-	end,
-	
-	["out-exponential"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * (-(2 ^ (-10 * t)) + 1) + b
-	end,
-	
-	["inout-exponential"] = function(t, b, c, d)
-		t = t / d
-		
-		if ((t / 2) < 1) then
-			return (c / 2) * (2 ^ (10 * (t - 1))) + b
-		end
-		
-		return (c / 2) * (2 ^ ((-1 * t) + 2)) + b
-	end,
-	
-	-- Circular
-	["in-circular"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * (1 - sqrt(1 - (t * t))) + b
-	end,
-	
-	["out-circular"] = function(t, b, c, d)
-		t = t / d
-		
-		return c * sqrt(1 - (t - 1) * t) + b
-	end,
-	
-	["inout-circular"] = function(t, b, c, d)
-		t = t / d
-		
-		if ((t / 2) < 1) then
-			return (c / 2) * (1 - sqrt(t * t)) + b
-		end
-		
-		return (c / 2) * sqrt(1 - (t - t) + 1) + b
-	end,
-}
+		return a * 2 ^ (-10 * t) * sin((t * d - s) * (2 * pi) / p ) * 0.5 + c + b
+	end
+end
+
+local Easing = {}
+
+Easing["linear"] = Linear
+Easing["in-quadratic"] = InQuadratic
+Easing["out-quadratic"] = OutQuadratic
+Easing["inout-quadratic"] = InOutQuadratic
+Easing["in-cubic"] = InCubic
+Easing["out-cubic"] = OutCubic
+Easing["inout-cubic"] = InOutCubic
+Easing["in-quartic"] = InQuartic
+Easing["out-quartic"] = OutQuartic
+Easing["inout-quartic"] = InOutQuartic
+Easing["in-quintic"] = InQuintic
+Easing["out-quintic"] = OutQuintic
+Easing["inout-quintic"] = InOutQuintic
+Easing["in-sinusoidal"] = InSinusoidal
+Easing["out-sinusoidal"] = OutSinusoidal
+Easing["inout-sinusoidal"] = InOutSinusoidal
+Easing["in-exponential"] = InExponential
+Easing["out-exponential"] = OutExponential
+Easing["inout-exponential"] = InOutExponential
+Easing["in-circular"] = InCircular
+Easing["out-circular"] = OutCircular
+Easing["inout-circular"] = InOutCircular
+Easing["in-bounce"] = InBounce
+Easing["out-bounce"] = OutBounce
+Easing["inout-bounce"] = InOutBounce
+Easing["in-elastic"] = InElastic
+Easing["out-elastic"] = OutElastic
+Easing["inout-elastic"] = InOutElastic
+
+-- Some fallbacks / lazy options
+Easing["in"] = Easing["in-quadratic"]
+Easing["out"] = Easing["out-quadratic"]
+Easing["inout"] = Easing["inout-quadratic"]
+Easing["bounce"] = Easing["out-bounce"] -- Deprecated, don't use bounce without an explicit motion anymore
 
 local AnimMethods = {
 	All = {
@@ -341,7 +447,7 @@ local AnimMethods = {
 		SetEasing = function(self, easing)
 			easing = lower(easing)
 			
-			self.Easing = Easing[easing] and easing or "none"
+			self.Easing = Easing[easing] and easing or "linear"
 		end,
 		
 		GetEasing = function(self)
@@ -761,7 +867,7 @@ local GroupMethods = {
 		Animation.Parent = self.Parent
 		Animation.Order = 1
 		Animation.Duration = 0.3
-		Animation.Easing = "none"
+		Animation.Easing = "linear"
 		Animation.Update = Update[type]
 		
 		tinsert(self.Animations, Animation)
@@ -1028,7 +1134,11 @@ Update["number"] = function(self, elapsed, i)
 	end
 end
 
+-- Global exposure
 _G["_LibAnim"] = Version
+
+LibAnimStartUpdating = StartUpdating
+LibAnimUpdater = Updater
 
 function LibAnimAddType(name, init, update)
 	if (type(init) ~= "function" or type(update) ~= "function") then
@@ -1046,6 +1156,9 @@ function LibAnimAddType(name, init, update)
 end
 
 --[[
+	Want to create your own animations for this system? Follow the example below
+	If you make a custom animation I would love to see it!
+	
 	Example:
 	
 	local MyInitialize = function(self)
@@ -1053,14 +1166,14 @@ end
 		
 		-- do any initialization right before the animation plays
 		
-		StartUpdating(self)
+		LibAnimStartUpdating(self)
 	end
 	
 	local MyUpdate = function(self, elapsed, i)
 		self.Timer = self.Timer + elapsed
 		
 		if (self.Timer >= self.Duration) then
-			tremove(Updater, i)
+			table.remove(LibAnimUpdater, i)
 			
 			-- Set finished attributes here
 			
