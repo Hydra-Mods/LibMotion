@@ -18,7 +18,7 @@ local tremove = table.remove
 local lower = string.lower
 local Updater = CreateFrame("StatusBar")
 local Texture = Updater:CreateTexture()
-local Text = Updater:CreateFontString()
+local FontString = Updater:CreateFontString()
 local AnimTypes = {}
 local UpdateFuncs = {}
 local Callbacks = {["onplay"] = {}, ["onpause"] = {}, ["onresume"] = {}, ["onstop"] = {}, ["onreset"] = {}, ["onfinished"] = {}}
@@ -52,7 +52,7 @@ local Set = {
 	["backdrop"] = Updater.SetBackdropColor,
 	["border"] = Updater.SetBackdropBorderColor,
 	["statusbar"] = Updater.SetStatusBarColor,
-	["text"] = Text.SetTextColor,
+	["text"] = FontString.SetTextColor,
 	["texture"] = Texture.SetTexture,
 	["vertex"] = Texture.SetVertexColor,
 }
@@ -61,7 +61,7 @@ local Get = {
 	["backdrop"] = Updater.GetBackdropColor,
 	["border"] = Updater.GetBackdropBorderColor,
 	["statusbar"] = Updater.GetStatusBarColor,
-	["text"] = Text.GetTextColor,
+	["text"] = FontString.GetTextColor,
 	["texture"] = Texture.GetVertexColor,
 	["vertex"] = Texture.GetVertexColor,
 }
@@ -431,6 +431,10 @@ local AnimMethods = {
 			self.Timer = 0
 			self.Parent:ClearAllPoints()
 			self.Parent:SetPoint(self.A1, self.P, self.A2, self.StartX, self.StartY)
+			
+			if self.IsRounded then
+				self.ModTimer = 0
+			end
 		end,
 	},
 	
@@ -788,23 +792,23 @@ end
 UpdateFuncs["move"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
-	if self.IsRounded then
-		self.ModTimer = Easing[self.Easing](self.Timer, 0, self.Duration, self.Duration)
-		self.XOffset = self.StartX - (-1) * (self.XChange * (1 - cos(90 * self.ModTimer / self.Duration)))
-		self.YOffset = self.StartY + self.YChange * sin(90 * self.ModTimer / self.Duration)
-	else
-		self.XOffset = Easing[self.Easing](self.Timer, self.StartX, self.XChange, self.Duration)
-		self.YOffset = Easing[self.Easing](self.Timer, self.StartY, self.YChange, self.Duration)
-	end
-	
-	self.Parent:SetPoint(self.A1, self.P, self.A2, (self.EndX ~= 0 and self.XOffset or self.StartX), (self.EndY ~= 0 and self.YOffset or self.StartY))
-	
 	if (self.Timer >= self.Duration) then
 		tremove(Updater, i)
 		self.Parent:SetPoint(self.A1, self.P, self.A2, self.EndX, self.EndY)
 		self.Playing = false
 		self:Callback("OnFinished")
 		self.Group:CheckOrder()
+	else
+		if self.IsRounded then
+			self.ModTimer = Easing[self.Easing](self.Timer, 0, self.Duration, self.Duration)
+			self.XOffset = self.StartX - (-1) * (self.XChange * (1 - cos(90 * self.ModTimer / self.Duration)))
+			self.YOffset = self.StartY + self.YChange * sin(90 * self.ModTimer / self.Duration)
+		else
+			self.XOffset = Easing[self.Easing](self.Timer, self.StartX, self.XChange, self.Duration)
+			self.YOffset = Easing[self.Easing](self.Timer, self.StartY, self.YChange, self.Duration)
+		end
+		
+		self.Parent:SetPoint(self.A1, self.P, self.A2, (self.EndX ~= 0 and self.XOffset or self.StartX), (self.EndY ~= 0 and self.YOffset or self.StartY))
 	end
 end
 
@@ -840,8 +844,6 @@ end
 -- Fade
 UpdateFuncs["fade"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
-	self.AlphaOffset = Easing[self.Easing](self.Timer, self.StartAlpha, self.Change, self.Duration)
-	self.Parent:SetAlpha(self.AlphaOffset)
 	
 	if (self.Timer >= self.Duration) then
 		tremove(Updater, i)
@@ -849,6 +851,9 @@ UpdateFuncs["fade"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		self.Group:CheckOrder()
+	else
+		self.AlphaOffset = Easing[self.Easing](self.Timer, self.StartAlpha, self.Change, self.Duration)
+		self.Parent:SetAlpha(self.AlphaOffset)
 	end
 end
 
@@ -868,8 +873,6 @@ end
 -- Height
 UpdateFuncs["height"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
-	self.HeightOffset = Easing[self.Easing](self.Timer, self.StartHeight, self.HeightChange, self.Duration)
-	self.Parent:SetHeight(self.HeightOffset)
 	
 	if (self.Timer >= self.Duration) then
 		tremove(Updater, i)
@@ -877,6 +880,9 @@ UpdateFuncs["height"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		self.Group:CheckOrder()
+	else
+		self.HeightOffset = Easing[self.Easing](self.Timer, self.StartHeight, self.HeightChange, self.Duration)
+		self.Parent:SetHeight(self.HeightOffset)
 	end
 end
 
@@ -896,8 +902,6 @@ end
 -- Width
 UpdateFuncs["width"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
-	self.WidthOffset = Easing[self.Easing](self.Timer, self.StartWidth, self.WidthChange, self.Duration)
-	self.Parent:SetWidth(self.WidthOffset)
 	
 	if (self.Timer >= self.Duration) then
 		tremove(Updater, i)
@@ -905,6 +909,9 @@ UpdateFuncs["width"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		self.Group:CheckOrder()
+	else
+		self.WidthOffset = Easing[self.Easing](self.Timer, self.StartWidth, self.WidthChange, self.Duration)
+		self.Parent:SetWidth(self.WidthOffset)
 	end
 end
 
@@ -924,8 +931,6 @@ end
 -- Color
 UpdateFuncs["color"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
-	self.ColorOffset = Easing[self.Easing](self.Timer, 0, self.Duration, self.Duration)
-	Set[self.ColorType](self.Parent, GetColor(self.Timer / self.Duration, self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
 	
 	if (self.Timer >= self.Duration) then
 		tremove(Updater, i)
@@ -933,6 +938,9 @@ UpdateFuncs["color"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		self.Group:CheckOrder()
+	else
+		self.ColorOffset = Easing[self.Easing](self.Timer, 0, self.Duration, self.Duration)
+		Set[self.ColorType](self.Parent, GetColor(self.Timer / self.Duration, self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
 	end
 end
 
@@ -950,8 +958,6 @@ end
 -- Progress
 UpdateFuncs["progress"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
-	self.ValueOffset = Easing[self.Easing](self.Timer, self.StartValue, self.ProgressChange, self.Duration)
-	self.Parent:SetValue(self.ValueOffset)
 	
 	if (self.Timer >= self.Duration) then
 		tremove(Updater, i)
@@ -959,6 +965,9 @@ UpdateFuncs["progress"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		self.Group:CheckOrder()
+	else
+		self.ValueOffset = Easing[self.Easing](self.Timer, self.StartValue, self.ProgressChange, self.Duration)
+		self.Parent:SetValue(self.ValueOffset)
 	end
 end
 
