@@ -1,7 +1,7 @@
 -- LibAnim by Hydra
 local Version = 2.03
 
--- Note, deprecated items will be removed next version. Please update your usage accordingly.
+-- Note, deprecated items will be removed next version. Please update your usage accordingly. (ctrl + f - "Deprecated")
 
 if (_LibAnim and _LibAnim >= Version) then
 	return
@@ -789,29 +789,6 @@ CreateAnimationGroup = function(parent)
 end
 
 -- Movement
-Update["move"] = function(self, elapsed, i)
-	self.Timer = self.Timer + elapsed
-	
-	if (self.Timer >= self.Duration) then
-		tremove(Updater, i)
-		self.Parent:SetPoint(self.A1, self.P, self.A2, self.EndX, self.EndY)
-		self.Playing = false
-		self:Callback("OnFinished")
-		self.Group:CheckOrder()
-	else
-		if self.IsRounded then
-			self.ModTimer = Easing[self.Easing](self.Timer, 0, self.Duration, self.Duration)
-			self.XOffset = self.StartX - (-1) * (self.XChange * (1 - cos(90 * self.ModTimer / self.Duration)))
-			self.YOffset = self.StartY + self.YChange * sin(90 * self.ModTimer / self.Duration)
-		else
-			self.XOffset = Easing[self.Easing](self.Timer, self.StartX, self.XChange, self.Duration)
-			self.YOffset = Easing[self.Easing](self.Timer, self.StartY, self.YChange, self.Duration)
-		end
-		
-		self.Parent:SetPoint(self.A1, self.P, self.A2, (self.EndX ~= 0 and self.XOffset or self.StartX), (self.EndY ~= 0 and self.YOffset or self.StartY))
-	end
-end
-
 Initialize["move"] = function(self)
 	if self.Playing then
 		return
@@ -841,7 +818,43 @@ Initialize["move"] = function(self)
 	StartUpdating(self)
 end
 
+Update["move"] = function(self, elapsed, i)
+	self.Timer = self.Timer + elapsed
+	
+	if (self.Timer >= self.Duration) then
+		tremove(Updater, i)
+		self.Parent:SetPoint(self.A1, self.P, self.A2, self.EndX, self.EndY)
+		self.Playing = false
+		self:Callback("OnFinished")
+		self.Group:CheckOrder()
+	else
+		if self.IsRounded then
+			self.ModTimer = Easing[self.Easing](self.Timer, 0, self.Duration, self.Duration)
+			self.XOffset = self.StartX - (-1) * (self.XChange * (1 - cos(90 * self.ModTimer / self.Duration)))
+			self.YOffset = self.StartY + self.YChange * sin(90 * self.ModTimer / self.Duration)
+		else
+			self.XOffset = Easing[self.Easing](self.Timer, self.StartX, self.XChange, self.Duration)
+			self.YOffset = Easing[self.Easing](self.Timer, self.StartY, self.YChange, self.Duration)
+		end
+		
+		self.Parent:SetPoint(self.A1, self.P, self.A2, (self.EndX ~= 0 and self.XOffset or self.StartX), (self.EndY ~= 0 and self.YOffset or self.StartY))
+	end
+end
+
 -- Fade
+Initialize["fade"] = function(self)
+	if self.Playing then
+		return
+	end
+	
+	self.Timer = 0
+	self.StartAlpha = self.Parent:GetAlpha() or 1
+	self.EndAlpha = self.EndAlphaSetting or 0
+	self.Change = self.EndAlpha - self.StartAlpha
+	
+	StartUpdating(self)
+end
+
 Update["fade"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
@@ -857,20 +870,20 @@ Update["fade"] = function(self, elapsed, i)
 	end
 end
 
-Initialize["fade"] = function(self)
+-- Height
+Initialize["height"] = function(self)
 	if self.Playing then
 		return
 	end
 	
 	self.Timer = 0
-	self.StartAlpha = self.Parent:GetAlpha() or 1
-	self.EndAlpha = self.EndAlphaSetting or 0
-	self.Change = self.EndAlpha - self.StartAlpha
+	self.StartHeight = self.Parent:GetHeight() or 0
+	self.EndHeight = self.EndHeightSetting or 0
+	self.HeightChange = self.EndHeight - self.StartHeight
 	
 	StartUpdating(self)
 end
 
--- Height
 Update["height"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
@@ -886,20 +899,20 @@ Update["height"] = function(self, elapsed, i)
 	end
 end
 
-Initialize["height"] = function(self)
+-- Width
+Initialize["width"] = function(self)
 	if self.Playing then
 		return
 	end
 	
 	self.Timer = 0
-	self.StartHeight = self.Parent:GetHeight() or 0
-	self.EndHeight = self.EndHeightSetting or 0
-	self.HeightChange = self.EndHeight - self.StartHeight
+	self.StartWidth = self.Parent:GetWidth() or 0
+	self.EndWidth = self.EndWidthSetting or 0
+	self.WidthChange = self.EndWidth - self.StartWidth
 	
 	StartUpdating(self)
 end
 
--- Width
 Update["width"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
@@ -915,20 +928,18 @@ Update["width"] = function(self, elapsed, i)
 	end
 end
 
-Initialize["width"] = function(self)
-	if self.Playing then
-		return
-	end
-	
+-- Color
+Initialize["color"] = function(self)
 	self.Timer = 0
-	self.StartWidth = self.Parent:GetWidth() or 0
-	self.EndWidth = self.EndWidthSetting or 0
-	self.WidthChange = self.EndWidth - self.StartWidth
+	self.ColorType = self.ColorType or "backdrop"
+	self.StartR, self.StartG, self.StartB = Get[self.ColorType](self.Parent)
+	self.EndR = self.EndRSetting or 1
+	self.EndG = self.EndGSetting or 1
+	self.EndB = self.EndBSetting or 1
 	
 	StartUpdating(self)
 end
 
--- Color
 Update["color"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
@@ -944,18 +955,16 @@ Update["color"] = function(self, elapsed, i)
 	end
 end
 
-Initialize["color"] = function(self)
+-- Progress
+Initialize["progress"] = function(self)
 	self.Timer = 0
-	self.ColorType = self.ColorType or "backdrop"
-	self.StartR, self.StartG, self.StartB = Get[self.ColorType](self.Parent)
-	self.EndR = self.EndRSetting or 1
-	self.EndG = self.EndGSetting or 1
-	self.EndB = self.EndBSetting or 1
+	self.StartValue = self.Parent:GetValue() or 0
+	self.EndValue = self.EndValueSetting or 0
+	self.ProgressChange = self.EndValue - self.StartValue
 	
 	StartUpdating(self)
 end
 
--- Progress
 Update["progress"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
@@ -971,16 +980,13 @@ Update["progress"] = function(self, elapsed, i)
 	end
 end
 
-Initialize["progress"] = function(self)
+-- Sleep
+Initialize["sleep"] = function(self)
 	self.Timer = 0
-	self.StartValue = self.Parent:GetValue() or 0
-	self.EndValue = self.EndValueSetting or 0
-	self.ProgressChange = self.EndValue - self.StartValue
 	
 	StartUpdating(self)
 end
 
--- Sleep
 Update["sleep"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
@@ -992,27 +998,7 @@ Update["sleep"] = function(self, elapsed, i)
 	end
 end
 
-Initialize["sleep"] = function(self)
-	self.Timer = 0
-	
-	StartUpdating(self)
-end
-
 -- Number
-Update["number"] = function(self, elapsed, i)
-	self.Timer = self.Timer + elapsed
-	self.NumberOffset = Easing[self.Easing](self.Timer, self.StartNumber, self.NumberChange, self.Duration)
-	self.Parent:SetText(self.Prefix..floor(self.NumberOffset)..self.Postfix)
-	
-	if (self.Timer >= self.Duration) then
-		tremove(Updater, i)
-		self.Parent:SetText(self.Prefix..floor(self.EndNumber)..self.Postfix)
-		self.Playing = false
-		self:Callback("OnFinished")
-		self.Group:CheckOrder()
-	end
-end
-
 Initialize["number"] = function(self)
 	self.Timer = 0
 	
@@ -1028,10 +1014,26 @@ Initialize["number"] = function(self)
 	StartUpdating(self)
 end
 
+Update["number"] = function(self, elapsed, i)
+	self.Timer = self.Timer + elapsed
+	self.NumberOffset = Easing[self.Easing](self.Timer, self.StartNumber, self.NumberChange, self.Duration)
+	self.Parent:SetText(self.Prefix..floor(self.NumberOffset)..self.Postfix)
+	
+	if (self.Timer >= self.Duration) then
+		tremove(Updater, i)
+		self.Parent:SetText(self.Prefix..floor(self.EndNumber)..self.Postfix)
+		self.Playing = false
+		self:Callback("OnFinished")
+		self.Group:CheckOrder()
+	end
+end
+
 _G["_LibAnim"] = Version
 
-function LibAnimAddType(name, update, init)
-	assert(type(update) == "function")
+function LibAnimAddType(name, init, update)
+	if (type(init) ~= "function" or type(update) ~= "function") then
+		return
+	end
 	
 	name = lower(name)
 	
@@ -1039,13 +1041,20 @@ function LibAnimAddType(name, update, init)
 		return
 	end
 	
-	assert(type(update) == "function")
-	Update[name] = update
 	Initialize[name] = init
+	Update[name] = update
 end
 
 --[[
 	Example:
+	
+	local MyInitialize = function(self)
+		self.Timer = 0
+		
+		-- do any initialization right before the animation plays
+		
+		StartUpdating(self)
+	end
 	
 	local MyUpdate = function(self, elapsed, i)
 		self.Timer = self.Timer + elapsed
@@ -1063,13 +1072,5 @@ end
 		end
 	end
 	
-	local MyInitialize = function(self)
-		self.Timer = 0
-		
-		-- do any initialization right before the animation plays
-		
-		StartUpdating(self)
-	end
-	
-	LibAnimAddType("MyAnim", MyUpdate, MyInitialize)
+	LibAnimAddType("MyAnim", MyInitialize, MyUpdate)
 --]]
