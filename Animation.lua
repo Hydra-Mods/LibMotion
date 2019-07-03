@@ -21,6 +21,7 @@ local Texture = Updater:CreateTexture()
 local FontString = Updater:CreateFontString()
 local Initialize = {}
 local Update = {}
+local Easing = {}
 local Callbacks = {["onplay"] = {}, ["onpause"] = {}, ["onresume"] = {}, ["onstop"] = {}, ["onreset"] = {}, ["onfinished"] = {}}
 
 -- Update all current animations
@@ -341,8 +342,6 @@ local InOutElastic = function(t, b, c, d)
 		return a * 2 ^ (-10 * t) * sin((t * d - s) * (2 * pi) / p ) * 0.5 + c + b
 	end
 end
-
-local Easing = {}
 
 Easing["linear"] = Linear
 Easing["in-quadratic"] = InQuadratic
