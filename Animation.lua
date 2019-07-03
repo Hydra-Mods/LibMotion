@@ -19,8 +19,8 @@ local lower = string.lower
 local Updater = CreateFrame("StatusBar")
 local Texture = Updater:CreateTexture()
 local FontString = Updater:CreateFontString()
-local AnimTypes = {}
-local UpdateFuncs = {}
+local Initialize = {}
+local Update = {}
 local Callbacks = {["onplay"] = {}, ["onpause"] = {}, ["onresume"] = {}, ["onstop"] = {}, ["onreset"] = {}, ["onfinished"] = {}}
 
 -- Update all current animations
@@ -277,7 +277,7 @@ local AnimMethods = {
 	All = {
 		Play = function(self)
 			if (not self.Paused) then
-				AnimTypes[self.Type](self)
+				Initialize[self.Type](self)
 				self:Callback("OnPlay")
 			else
 				StartUpdating(self)
@@ -733,7 +733,7 @@ local GroupMethods = {
 	CreateAnimation = function(self, type)
 		type = lower(type)
 		
-		if (not AnimTypes[type]) then
+		if (not Initialize[type]) then
 			return
 		end
 		
@@ -762,7 +762,7 @@ local GroupMethods = {
 		Animation.Order = 1
 		Animation.Duration = 0.3
 		Animation.Easing = "none"
-		Animation.Update = UpdateFuncs[type]
+		Animation.Update = Update[type]
 		
 		tinsert(self.Animations, Animation)
 		
@@ -789,7 +789,7 @@ CreateAnimationGroup = function(parent)
 end
 
 -- Movement
-UpdateFuncs["move"] = function(self, elapsed, i)
+Update["move"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -812,7 +812,7 @@ UpdateFuncs["move"] = function(self, elapsed, i)
 	end
 end
 
-AnimTypes["move"] = function(self)
+Initialize["move"] = function(self)
 	if self.Playing then
 		return
 	end
@@ -842,7 +842,7 @@ AnimTypes["move"] = function(self)
 end
 
 -- Fade
-UpdateFuncs["fade"] = function(self, elapsed, i)
+Update["fade"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -857,7 +857,7 @@ UpdateFuncs["fade"] = function(self, elapsed, i)
 	end
 end
 
-AnimTypes["fade"] = function(self)
+Initialize["fade"] = function(self)
 	if self.Playing then
 		return
 	end
@@ -871,7 +871,7 @@ AnimTypes["fade"] = function(self)
 end
 
 -- Height
-UpdateFuncs["height"] = function(self, elapsed, i)
+Update["height"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -886,7 +886,7 @@ UpdateFuncs["height"] = function(self, elapsed, i)
 	end
 end
 
-AnimTypes["height"] = function(self)
+Initialize["height"] = function(self)
 	if self.Playing then
 		return
 	end
@@ -900,7 +900,7 @@ AnimTypes["height"] = function(self)
 end
 
 -- Width
-UpdateFuncs["width"] = function(self, elapsed, i)
+Update["width"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -915,7 +915,7 @@ UpdateFuncs["width"] = function(self, elapsed, i)
 	end
 end
 
-AnimTypes["width"] = function(self)
+Initialize["width"] = function(self)
 	if self.Playing then
 		return
 	end
@@ -929,7 +929,7 @@ AnimTypes["width"] = function(self)
 end
 
 -- Color
-UpdateFuncs["color"] = function(self, elapsed, i)
+Update["color"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -944,7 +944,7 @@ UpdateFuncs["color"] = function(self, elapsed, i)
 	end
 end
 
-AnimTypes["color"] = function(self)
+Initialize["color"] = function(self)
 	self.Timer = 0
 	self.ColorType = self.ColorType or "backdrop"
 	self.StartR, self.StartG, self.StartB = Get[self.ColorType](self.Parent)
@@ -956,7 +956,7 @@ AnimTypes["color"] = function(self)
 end
 
 -- Progress
-UpdateFuncs["progress"] = function(self, elapsed, i)
+Update["progress"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -971,7 +971,7 @@ UpdateFuncs["progress"] = function(self, elapsed, i)
 	end
 end
 
-AnimTypes["progress"] = function(self)
+Initialize["progress"] = function(self)
 	self.Timer = 0
 	self.StartValue = self.Parent:GetValue() or 0
 	self.EndValue = self.EndValueSetting or 0
@@ -981,7 +981,7 @@ AnimTypes["progress"] = function(self)
 end
 
 -- Sleep
-UpdateFuncs["sleep"] = function(self, elapsed, i)
+Update["sleep"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -992,14 +992,14 @@ UpdateFuncs["sleep"] = function(self, elapsed, i)
 	end
 end
 
-AnimTypes["sleep"] = function(self)
+Initialize["sleep"] = function(self)
 	self.Timer = 0
 	
 	StartUpdating(self)
 end
 
 -- Number
-UpdateFuncs["number"] = function(self, elapsed, i)
+Update["number"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	self.NumberOffset = Easing[self.Easing](self.Timer, self.StartNumber, self.NumberChange, self.Duration)
 	self.Parent:SetText(self.Prefix..floor(self.NumberOffset)..self.Postfix)
@@ -1013,7 +1013,7 @@ UpdateFuncs["number"] = function(self, elapsed, i)
 	end
 end
 
-AnimTypes["number"] = function(self)
+Initialize["number"] = function(self)
 	self.Timer = 0
 	
 	if (not self.StartNumber) then
@@ -1030,21 +1030,46 @@ end
 
 _G["_LibAnim"] = Version
 
---[[function _LibAnim:RegisterEase(name, func)
+function LibAnimAddType(name, update, init)
+	assert(type(update) == "function")
+	
 	name = lower(name)
 	
-	if (not Easing[name]) then
-		Easing[name] = func
-	end
-end
-
-function _LibAnim:RegisterAnimation(name, update, start)
-	name = lower(name)
-	
-	if AnimTypes[name] then
+	if Initialize[name] then
 		return
 	end
 	
-	UpdateFuncs[name] = update
-	AnimTypes[name] = start
-end]]
+	assert(type(update) == "function")
+	Update[name] = update
+	Initialize[name] = init
+end
+
+--[[
+	Example:
+	
+	local MyUpdate = function(self, elapsed, i)
+		self.Timer = self.Timer + elapsed
+		
+		if (self.Timer >= self.Duration) then
+			tremove(Updater, i)
+			
+			-- Set finished attributes here
+			
+			self.Playing = false
+			self:Callback("OnFinished")
+			self.Group:CheckOrder() 
+		else
+			-- Do any updating necessary here
+		end
+	end
+	
+	local MyInitialize = function(self)
+		self.Timer = 0
+		
+		-- do any initialization right before the animation plays
+		
+		StartUpdating(self)
+	end
+	
+	LibAnimAddType("MyAnim", MyUpdate, MyInitialize)
+--]]
