@@ -1121,8 +1121,6 @@ end
 
 Update["number"] = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
-	self.NumberOffset = Easing[self.Easing](self.Timer, self.StartNumber, self.NumberChange, self.Duration)
-	self.Parent:SetText(self.Prefix..floor(self.NumberOffset)..self.Postfix)
 	
 	if (self.Timer >= self.Duration) then
 		tremove(Updater, i)
@@ -1130,6 +1128,9 @@ Update["number"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		self.Group:CheckOrder()
+	else
+		self.NumberOffset = Easing[self.Easing](self.Timer, self.StartNumber, self.NumberChange, self.Duration)
+		self.Parent:SetText(self.Prefix..floor(self.NumberOffset)..self.Postfix)
 	end
 end
 
