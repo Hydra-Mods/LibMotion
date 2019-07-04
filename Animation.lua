@@ -453,9 +453,15 @@ local AnimMethods = {
 			return self.Easing
 		end,
 		
-		SetSmoothing = SetEasing, -- Deprecated, change "SetSmoothing" to "SetEasing"
+		SetSmoothing = function(self, easing) -- Deprecated, change "SetSmoothing" to "SetEasing"
+			easing = lower(easing)
+			
+			self.Easing = Easing[easing] and easing or "linear"
+		end,
 		
-		GetSmoothing = GetEasing, -- Deprecated, change "GetSmoothing" to "GetEasing"
+		GetSmoothing = function(self) -- Deprecated, change "GetSmoothing" to "GetEasing"
+			return self.Easing
+		end,
 		
 		SetDuration = function(self, duration)
 			self.Duration = duration or 0
@@ -611,10 +617,10 @@ local AnimMethods = {
 			return self.EndRSetting, self.EndGSetting, self.EndBSetting
 		end,
 		
-		SetColorType = function(self, type)
-			type = lower(type)
+		SetColorType = function(self, region)
+			region = lower(region)
 			
-			self.ColorType = Set[type] and type or "border"
+			self.ColorType = Set[region] and region or "border"
 		end,
 		
 		GetColorType = function(self)
@@ -835,10 +841,10 @@ local GroupMethods = {
 		end
 	end,
 	
-	CreateAnimation = function(self, type)
-		type = lower(type)
+	CreateAnimation = function(self, style)
+		style = lower(style)
 		
-		if (not Initialize[type]) then
+		if (not Initialize[style]) then
 			return
 		end
 		
@@ -850,8 +856,8 @@ local GroupMethods = {
 		end
 		
 		-- Animation specific methods
-		if AnimMethods[type] then
-			for key, func in pairs(AnimMethods[type]) do
+		if AnimMethods[style] then
+			for key, func in pairs(AnimMethods[style]) do
 				Animation[key] = func
 			end
 		end
@@ -861,13 +867,13 @@ local GroupMethods = {
 		Animation.Playing = false
 		Animation.Stopped = false
 		Animation.Looping = false
-		Animation.Type = type
+		Animation.Type = style
 		Animation.Group = self
 		Animation.Parent = self.Parent
 		Animation.Order = 1
 		Animation.Duration = 0.3
 		Animation.Easing = "linear"
-		Animation.Update = Update[type]
+		Animation.Update = Update[style]
 		
 		tinsert(self.Animations, Animation)
 		
