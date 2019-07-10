@@ -25,7 +25,7 @@ local Easing = {}
 local Callbacks = {["onplay"] = {}, ["onpause"] = {}, ["onresume"] = {}, ["onstop"] = {}, ["onreset"] = {}, ["onfinished"] = {}}
 
 -- Update all current animations
-local AnimationOnUpdate = function(self, elapsed)
+local OnUpdate = function(self, elapsed)
 	for i = 1, #self do
 		if self[i] then -- Double check that the index still exists, due to pauses/stops removing them on the fly
 			self[i]:Update(elapsed, i)
@@ -41,7 +41,7 @@ local StartUpdating = function(anim)
 	tinsert(Updater, anim)
 	
 	if (not Updater:GetScript("OnUpdate")) then
-		Updater:SetScript("OnUpdate", AnimationOnUpdate)
+		Updater:SetScript("OnUpdate", OnUpdate)
 	end
 end
 
