@@ -1145,6 +1145,7 @@ _G["_LibAnim"] = Version
 
 LibAnimStartUpdating = StartUpdating
 LibAnimUpdater = Updater
+LibAnimMethods = AnimMethods
 
 function LibAnimAddType(name, init, update)
 	if (type(init) ~= "function" or type(update) ~= "function") then
