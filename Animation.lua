@@ -547,6 +547,17 @@ local AnimMethods = {
 				self.ModTimer = 0
 			end
 		end,
+		
+		Finish = function(self)
+			self:Stop()
+			
+			if self.IsRounded then
+				self.ModTimer = 0
+			end
+			
+			self.Parent:ClearAllPoints()
+			self.Parent:SetPoint(self.A1, self.P, self.A2, self.EndX, self.EndY)
+		end,
 	},
 	
 	fade = {
@@ -565,6 +576,11 @@ local AnimMethods = {
 		Reset = function(self)
 			self.Timer = 0
 			self.Parent:SetAlpha(self.StartAlpha)
+		end,
+		
+		Finish = function(self)
+			self:Stop()
+			self.Parent:SetAlpha(self.EndAlpha)
 		end,
 	},
 	
@@ -585,6 +601,11 @@ local AnimMethods = {
 			self.Timer = 0
 			self.Parent:SetHeight(self.StartHeight)
 		end,
+		
+		Finish = function(self)
+			self:Stop()
+			self.Parent:SetHeight(self.EndHeight)
+		end,
 	},
 	
 	width = {
@@ -603,6 +624,11 @@ local AnimMethods = {
 		Reset = function(self)
 			self.Timer = 0
 			self.Parent:SetWidth(self.StartWidth)
+		end,
+		
+		Finish = function(self)
+			self:Stop()
+			self.Parent:SetWidth(self.EndWidth)
 		end,
 	},
 	
@@ -635,6 +661,11 @@ local AnimMethods = {
 			self.Timer = 0
 			Set[self.ColorType](self.Parent, self.StartR, self.StartG, self.StartB)
 		end,
+		
+		Finish = function(self)
+			self:Stop()
+			Set[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
+		end,
 	},
 	
 	progress = {
@@ -653,6 +684,11 @@ local AnimMethods = {
 		Reset = function(self)
 			self.Timer = 0
 			self.Parent:SetValue(self.StartValue)
+		end,
+		
+		Finish = function(self)
+			self:Stop()
+			self.Parent:SetValue(self.EndValue)
 		end,
 	},
 	
@@ -696,6 +732,11 @@ local AnimMethods = {
 		Reset = function(self)
 			self.Timer = 0
 			self.Parent:SetText(self.StartNumber)
+		end,
+		
+		Finish = function(self)
+			self:Stop()
+			self.Parent:SetText(self.EndNumber)
 		end,
 	},
 	
