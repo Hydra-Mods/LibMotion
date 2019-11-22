@@ -1,5 +1,5 @@
 -- LibAnim by Hydra
-local Version = 2.03
+local Version = 2.04
 
 if (_LibAnim and _LibAnim >= Version) then
 	return
@@ -32,14 +32,6 @@ local OnUpdate = function(self, elapsed)
 	
 	if (#self == 0) then
 		self:SetScript("OnUpdate", nil)
-	end
-end
-
-local StartUpdating = function(anim)
-	tinsert(Updater, anim)
-	
-	if (not Updater:GetScript("OnUpdate")) then
-		Updater:SetScript("OnUpdate", OnUpdate)
 	end
 end
 
@@ -382,7 +374,7 @@ local AnimMethods = {
 				Initialize[self.Type](self)
 				self:Callback("OnPlay")
 			else
-				StartUpdating(self)
+				self:StartUpdating()
 				self:Callback("OnResume")
 			end
 			
@@ -499,6 +491,14 @@ local AnimMethods = {
 			
 			if Callbacks[handler][self] then
 				Callbacks[handler][self](self)
+			end
+		end,
+		
+		StartUpdating = function(self)
+			tinsert(Updater, self)
+			
+			if (not Updater:GetScript("OnUpdate")) then
+				Updater:SetScript("OnUpdate", OnUpdate)
 			end
 		end,
 	},
@@ -958,7 +958,7 @@ Initialize["move"] = function(self)
 		end
 	end
 	
-	StartUpdating(self)
+	self:StartUpdating()
 end
 
 Update["move"] = function(self, elapsed, i)
@@ -995,7 +995,7 @@ Initialize["fade"] = function(self)
 	self.EndAlpha = self.EndAlphaSetting or 0
 	self.Change = self.EndAlpha - self.StartAlpha
 	
-	StartUpdating(self)
+	self:StartUpdating()
 end
 
 Update["fade"] = function(self, elapsed, i)
@@ -1024,7 +1024,7 @@ Initialize["height"] = function(self)
 	self.EndHeight = self.EndHeightSetting or 0
 	self.HeightChange = self.EndHeight - self.StartHeight
 	
-	StartUpdating(self)
+	self:StartUpdating()
 end
 
 Update["height"] = function(self, elapsed, i)
@@ -1053,7 +1053,7 @@ Initialize["width"] = function(self)
 	self.EndWidth = self.EndWidthSetting or 0
 	self.WidthChange = self.EndWidth - self.StartWidth
 	
-	StartUpdating(self)
+	self:StartUpdating()
 end
 
 Update["width"] = function(self, elapsed, i)
@@ -1080,7 +1080,7 @@ Initialize["color"] = function(self)
 	self.EndG = self.EndGSetting or 1
 	self.EndB = self.EndBSetting or 1
 	
-	StartUpdating(self)
+	self:StartUpdating()
 end
 
 Update["color"] = function(self, elapsed, i)
@@ -1105,7 +1105,7 @@ Initialize["progress"] = function(self)
 	self.EndValue = self.EndValueSetting or 0
 	self.ProgressChange = self.EndValue - self.StartValue
 	
-	StartUpdating(self)
+	self:StartUpdating()
 end
 
 Update["progress"] = function(self, elapsed, i)
@@ -1127,7 +1127,7 @@ end
 Initialize["sleep"] = function(self)
 	self.Timer = 0
 	
-	StartUpdating(self)
+	self:StartUpdating()
 end
 
 Update["sleep"] = function(self, elapsed, i)
@@ -1154,7 +1154,7 @@ Initialize["number"] = function(self)
 	self.Prefix = self.Prefix or ""
 	self.Postfix = self.Postfix or ""
 	
-	StartUpdating(self)
+	self:StartUpdating()
 end
 
 Update["number"] = function(self, elapsed, i)
