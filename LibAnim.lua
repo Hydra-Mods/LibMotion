@@ -722,7 +722,7 @@ local AnimMethods = {
 		end,
 		
 		GetProgress = function(self)
-			return self.Timer
+			return self.CurrentValue
 		end,
 		
 		Reset = function(self)
