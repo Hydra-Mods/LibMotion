@@ -1,5 +1,5 @@
 -- LibAnim by Hydra
-local Version = 2.06
+local Version = 2.07
 
 if (_LibAnim and _LibAnim >= Version) then
 	return
@@ -8,7 +8,9 @@ end
 local pi = math.pi
 local cos = math.cos
 local sin = math.sin
+local mod = math.fmod
 local sqrt = math.sqrt
+local ceil = math.ceil
 local floor = math.floor
 local tinsert = table.insert
 local tremove = table.remove
@@ -57,12 +59,12 @@ local Get = {
 	["vertex"] = Texture.GetVertexColor,
 }
 
--- Linear
+-- Linear easing
 Easing["linear"] = function(t, b, c, d)
 	return c * t / d + b
 end
 
--- Quadratic
+-- Quadratic easing
 Easing["in-quadratic"] = function(t, b, c, d)
 	t = t / d
 	
@@ -85,7 +87,7 @@ Easing["inout-quadratic"] = function(t, b, c, d)
 	end
 end
 
--- Cubic
+-- Cubic easing
 Easing["in-cubic"] = function(t, b, c, d)
 	t = t / d
 	
@@ -110,7 +112,7 @@ Easing["inout-cubic"] = function(t, b, c, d)
 	end
 end
 
--- Quartic
+-- Quartic easing
 Easing["in-quartic"] = function(t, b, c, d)
 	t = t / d
 	
@@ -135,7 +137,7 @@ Easing["inout-quartic"] = function(t, b, c, d)
 	end
 end
 
--- Quintic
+-- Quintic easing
 Easing["in-quintic"] = function(t, b, c, d)
 	t = t / d
 	
@@ -160,7 +162,7 @@ Easing["inout-quintic"] = function(t, b, c, d)
 	end
 end
 
--- Sinusoidal
+-- Sinusoidal easing
 Easing["in-sinusoidal"] = function(t, b, c, d)
 	return -c * cos(t / d * (pi / 2)) + c + b
 end
@@ -173,7 +175,7 @@ Easing["inout-sinusoidal"] = function(t, b, c, d)
 	return -c / 2 * (cos(pi * t / d) - 1) + b
 end
 
--- Exponential
+-- Exponential easing
 Easing["in-exponential"] = function(t, b, c, d)
 	if (t == 0) then
 		return b
@@ -210,7 +212,7 @@ Easing["inout-exponential"] = function(t, b, c, d)
 	end
 end
 
--- Circular
+-- Circular easing
 Easing["in-circular"] = function(t, b, c, d)
 	t = t / d
 	
@@ -235,7 +237,7 @@ Easing["inout-circular"] = function(t, b, c, d)
 	end
 end
 
--- Bounce
+-- Bounce easing
 Easing["out-bounce"] = function(t, b, c, d)
 	t = t / d
 	
@@ -268,7 +270,7 @@ Easing["inout-bounce"] = function(t, b, c, d)
 	end
 end
 
--- Elastic
+-- Elastic easing
 Easing["in-elastic"] = function(t, b, c, d)
 	if (t == 0) then
 		return b
@@ -333,7 +335,7 @@ Easing["inout-elastic"] = function(t, b, c, d)
 	end
 end
 
--- Some fallbacks / lazy options
+-- Simple options
 Easing["in"] = Easing["in-quadratic"]
 Easing["out"] = Easing["out-quadratic"]
 Easing["inout"] = Easing["inout-quadratic"]
@@ -732,6 +734,53 @@ local AnimMethods = {
 		Finish = function(self)
 			self:Stop()
 			self.Parent:SetScale(self.EndScale)
+		end,
+	},
+	
+	frames = {
+		SetTextureSize = function(self, width, height)
+			self.TextureWidthSetting = width or 0
+			self.TextureHeightSetting = height or width or 0
+		end,
+		
+		GetTextureSize = function(self)
+			return self.TextureWidthSetting, self.TextureHeightSetting
+		end,
+	
+		SetFrameSize = function(self, size)
+			self.FrameSizeSetting = size or 0
+		end,
+		
+		GetFrameSize = function(self)
+			return self.FrameSizeSetting
+		end,
+		
+		SetNumFrames = function(self, frames)
+			self.NumFramesSetting = frames or 0
+		end,
+		
+		GetNumFrames = function(self)
+			return self.NumFramesSetting
+		end,
+		
+		SetFrameDelay = function(self, delay)
+			self.DelaySetting = delay or 0
+		end,
+		
+		GetFrameDelay = function(self)
+			return self.DelaySetting
+		end,
+		
+		GetProgress = function(self)
+			return self.Frame
+		end,
+		
+		Reset = function(self)
+			self.Timer = 0
+		end,
+		
+		Finish = function(self)
+			self:Stop()
 		end,
 	},
 }
@@ -1192,6 +1241,59 @@ Update["scale"] = function(self, elapsed, i)
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, self.StartScale, self.ScaleChange, self.Duration)
 		self.Parent:SetScale(self.CurrentValue)
+	end
+end
+
+-- Frames
+Initialize["frames"] = function(self)
+	if self.Playing then
+		return
+	end
+	
+	self.Timer = 0
+	self.Frame = 1
+	self.Delay = self.DelaySetting or 0
+	self.Throttle = self.Delay
+	self.NumFrames = self.NumFramesSetting or 0
+	self.TextureWidth = self.TextureWidthSetting or self.Parent:GetWidth()
+	self.TextureHeight = self.TextureHeightSetting or self.Parent:GetHeight()
+	self.FrameSize = self.FrameSizeSetting or 0
+	self.NumColumns = floor(self.TextureWidth / self.FrameSize)
+	self.ColumnWidth = self.FrameSize / self.TextureWidth
+	self.NumRows = floor(self.TextureHeight / self.FrameSize)
+	self.RowHeight = self.FrameSize / self.TextureHeight
+	
+	self:StartUpdating()
+end
+
+Update["frames"] = function(self, elapsed, i)
+	self.Timer = self.Timer + elapsed
+	
+	if (self.Timer >= self.Duration) then
+		tremove(Updater, i)
+		self.Playing = false
+		self:Callback("OnFinished")
+		self.Group:CheckOrder()
+	else
+		if (self.Throttle > self.Delay) then
+			local Advance = floor(self.Throttle / self.Delay)
+			
+			while (self.Frame + Advance > self.NumFrames) do
+				self.Frame = self.Frame - self.NumFrames
+			end
+			
+			self.Frame = self.Frame + Advance
+			
+			local Left = mod(self.Frame - 1, self.NumColumns) * self.ColumnWidth
+			local Right = Left + self.ColumnWidth
+			local Bottom = ceil(self.Frame / self.NumColumns) * self.RowHeight
+			local Top = Bottom - self.RowHeight
+			
+			self.Parent:SetTexCoord(Left, Right, Top, Bottom)
+			self.Throttle = 0
+		end
+		
+		self.Throttle = self.Throttle + elapsed
 	end
 end
 
