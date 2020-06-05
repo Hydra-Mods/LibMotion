@@ -473,6 +473,16 @@ local AnimMethods = {
 			return self.Group
 		end,
 		
+		Ungroup = function(self) -- animation:Ungroup() --> Remove the animation from its group
+			if self.Group then
+				for i = 1, #self.Group.Animations do
+					if self.Group.Animations[i] == self then
+						tremove(self.Group, i)
+					end
+				end
+			end
+		end,
+		
 		SetScript = function(self, handler, func) -- animation:SetScript(handler, func) --> Set a callback to be fired on an event
 			handler = handler:lower()
 			
@@ -959,6 +969,22 @@ local GroupMethods = {
 					self.Animations[i]:Play()
 				end
 			end
+		end
+	end,
+	
+	StartUpdating = function(self)
+		tinsert(Updater, self)
+		
+		if (not Updater:GetScript("OnUpdate")) then
+			Updater:SetScript("OnUpdate", OnUpdate)
+		end
+	end,
+	
+	Update = function(self, elapsed, index)
+		--Update[self.Type](self, elapsed, index)
+		
+		for i = 1, #self.Animations do
+			self.Animations[i]:Update(elapsed, index)
 		end
 	end,
 }
