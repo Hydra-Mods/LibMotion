@@ -1,7 +1,6 @@
--- LibAnim by Hydra
-local Version = 2.07
+local LibAnim = LibStub:NewLibrary("LibAnim", 1)
 
-if (_LibAnim and _LibAnim >= Version) then
+if (not LibAnim) then
 	return
 end
 
@@ -14,20 +13,28 @@ local ceil = math.ceil
 local floor = math.floor
 local tinsert = table.insert
 local tremove = table.remove
-local lower = string.lower
 local pairs = pairs
+local rawget = rawget
 local Updater = CreateFrame("StatusBar")
 local Texture = Updater:CreateTexture()
 local FontString = Updater:CreateFontString()
 local Initialize = {}
 local Update = {}
 local Easing = {}
-local Callbacks = {["onplay"] = {}, ["onpause"] = {}, ["onresume"] = {}, ["onstop"] = {}, ["onreset"] = {}, ["onfinished"] = {}}
 
--- Update all current animations
+local Callbacks = {} -- OnPlay, OnPause, OnResume, OnStop, OnReset, OnFinished, OnLoop
+
+local Index = {
+	__index = function(t, k)
+		if rawget(t, k) then
+			return rawget(t, k)
+		end
+	end
+}
+
 local OnUpdate = function(self, elapsed)
 	for i = 1, #self do
-		if self[i] then -- Double check that the index still exists, due to pauses/stops removing them on the fly
+		if self[i] then
 			self[i]:Update(elapsed, i)
 		end
 	end
@@ -42,21 +49,21 @@ local GetColor = function(p, r1, g1, b1, r2, g2, b2)
 end
 
 local Set = {
-	["backdrop"] = Updater.SetBackdropColor,
-	["border"] = Updater.SetBackdropBorderColor,
-	["statusbar"] = Updater.SetStatusBarColor,
-	["text"] = FontString.SetTextColor,
-	["texture"] = Texture.SetTexture,
-	["vertex"] = Texture.SetVertexColor,
+	backdrop = Updater.SetBackdropColor,
+	border = Updater.SetBackdropBorderColor,
+	statusbar = Updater.SetStatusBarColor,
+	text = FontString.SetTextColor,
+	texture = Texture.SetTexture,
+	vertex = Texture.SetVertexColor,
 }
 
 local Get = {
-	["backdrop"] = Updater.GetBackdropColor,
-	["border"] = Updater.GetBackdropBorderColor,
-	["statusbar"] = Updater.GetStatusBarColor,
-	["text"] = FontString.GetTextColor,
-	["texture"] = Texture.GetVertexColor,
-	["vertex"] = Texture.GetVertexColor,
+	backdrop = Updater.GetBackdropColor,
+	border = Updater.GetBackdropBorderColor,
+	statusbar = Updater.GetStatusBarColor,
+	text = FontString.GetTextColor,
+	texture = Texture.GetVertexColor,
+	vertex = Texture.GetVertexColor,
 }
 
 -- Linear easing
@@ -342,10 +349,12 @@ Easing["inout"] = Easing["inout-quadratic"]
 
 local AnimMethods = {
 	All = {
-		Play = function(self)
+		Play = function(self) -- animation:Play() --> Play the animation
 			if (not self.Paused) then
-				Initialize[self.Type](self)
-				self:Callback("OnPlay")
+				if Initialize[self.Type] then
+					Initialize[self.Type](self)
+					self:Callback("OnPlay")
+				end
 			else
 				self:StartUpdating()
 				self:Callback("OnResume")
@@ -356,11 +365,11 @@ local AnimMethods = {
 			self.Stopped = false
 		end,
 		
-		IsPlaying = function(self)
+		IsPlaying = function(self) -- animation:IsPlaying() --> Return playing state of the animation
 			return self.Playing
 		end,
 		
-		Pause = function(self)
+		Pause = function(self) -- animation:Pause() --> Pause the animation
 			for i = 1, #Updater do
 				if (Updater[i] == self) then
 					tremove(Updater, i)
@@ -375,11 +384,11 @@ local AnimMethods = {
 			self:Callback("OnPause")
 		end,
 		
-		IsPaused = function(self)
+		IsPaused = function(self) -- animation:IsPaused() --> Return paused state of the animation
 			return self.Paused
 		end,
 		
-		Stop = function(self, reset)
+		Stop = function(self, reset) -- animation:Stop(reset) --> Stop the animation. Optional argument resets the animation to its pre-played state
 			for i = 1, #Updater do
 				if (Updater[i] == self) then
 					tremove(Updater, i)
@@ -401,33 +410,33 @@ local AnimMethods = {
 			end
 		end,
 		
-		IsStopped = function(self)
+		IsStopped = function(self) -- animation:IsStopped() --> Return stopped state of the animation
 			return self.Stopped
 		end,
 		
-		SetEasing = function(self, easing)
-			easing = lower(easing)
+		SetEasing = function(self, easing) -- animation:SetEasing(easing) --> Set the easing of the animation
+			easing = easing:lower()
 			
 			self.Easing = Easing[easing] and easing or "linear"
 		end,
 		
-		GetEasing = function(self)
+		GetEasing = function(self) -- animation:GetEasing() --> Get the easing of the animation
 			return self.Easing
 		end,
 		
-		SetDuration = function(self, duration)
+		SetDuration = function(self, duration) -- animation:SetDuration(seconds) --> Set the duration of the animation
 			self.Duration = duration or 0
 		end,
 		
-		GetDuration = function(self)
+		GetDuration = function(self) -- animation:GetDuration() --> Get the duration of the animation in seconds
 			return self.Duration
 		end,
 		
-		GetProgressByTimer = function(self)
+		GetProgressByTimer = function(self) -- animation:GetProgressByTimer() --> Get the progress of the animation in seconds
 			return self.Timer
 		end,
 		
-		SetOrder = function(self, order)
+		SetOrder = function(self, order) -- animation:SetOrder(num) --> Set the play order of the animation, if it belongs to a group
 			self.Order = order or 1
 			
 			if (order > self.Group.MaxOrder) then
@@ -435,70 +444,95 @@ local AnimMethods = {
 			end
 		end,
 		
-		GetOrder = function(self)
+		GetOrder = function(self) -- animation:GetOrder() --> Get the play order of the animation
 			return self.Order
 		end,
 		
-		GetParent = function(self)
+		SetParent = function(self, parent) -- animation:SetParent(object) --> Set the object that the animation controls
+			self.Parent = parent
+		end,
+		
+		GetParent = function(self) -- animation:GetParent() --> Get the object that the animation controls
 			return self.Parent
 		end,
 		
-		SetScript = function(self, handler, func)
-			handler = lower(handler)
+		SetGroup = function(self, group) -- animation:SetGroup(group) --> Add the animation to a group
+			if (not group.Animations) then
+				group.Animations = {}
+			end
+			
+			self.Order = 1
+			self.Group = group
+			
+			tinsert(group.Animations, self)
+			
+			return self.Group
+		end,
+		
+		GetGroup = function(self) -- animation:GetGroup() --> Get the animation group
+			return self.Group
+		end,
+		
+		SetScript = function(self, handler, func) -- animation:SetScript(handler, func) --> Set a callback to be fired on an event
+			handler = handler:lower()
 			
 			if Callbacks[handler] then
 				Callbacks[handler][self] = func
 			end
 		end,
 		
-		GetScript = function(self, handler)
-			handler = lower(handler)
+		GetScript = function(self, handler) -- animation:GetScript(handler) --> Get the callback to be fired on an event
+			handler = handler:lower()
 			
 			if (Callbacks[handler] and Callbacks[handler][self]) then
 				return Callbacks[handler][self]
 			end
 		end,
 		
-		Callback = function(self, handler)
-			handler = lower(handler)
+		Callback = function(self, handler) -- animation:Callback(handler) --> Fire a callback on an event
+			handler = handler:lower()
 			
-			if Callbacks[handler][self] then
+			if (Callbacks[handler] and Callbacks[handler][self]) then
 				Callbacks[handler][self](self)
 			end
 		end,
 		
-		StartUpdating = function(self)
+		StartUpdating = function(self) -- animation:StartUpdating() --> Start updating the animation. This is called by :Play()
 			tinsert(Updater, self)
 			
 			if (not Updater:GetScript("OnUpdate")) then
 				Updater:SetScript("OnUpdate", OnUpdate)
 			end
 		end,
+		
+		Update = function(self, elapsed, index) -- animation:Update() --> The update function of the animation. Called while the animation is playing
+			Update[self.Type](self, elapsed, index)
+		end,
 	},
 	
 	move = {
-		SetOffset = function(self, x, y)
+		SetOffset = function(self, x, y) -- animation:SetOffset(x, y) --> Set the x and y offset of a movement animation
 			self.XSetting = x or 0
 			self.YSetting = y or 0
 		end,
 		
-		GetOffset = function(self)
+		GetOffset = function(self) -- animation:GetOffset() --> Get the x and y offset of a movement animation
 			return self.XSetting, self.YSetting
 		end,
 		
-		SetRounded = function(self, flag)
+		SetRounded = function(self, flag) -- animation:SetRounded() --> Set a movement animation to use a rounded path rather than linear
 			self.IsRounded = flag
 		end,
 		
-		GetRounded = function(self)
+		GetRounded = function(self) -- animation:GetRounded() --> Get whether a movement animation will use a rounded path rather than linear
 			return self.IsRounded
 		end,
 		
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of the animation position
 			return self.XOffset, self.YOffset
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 			self.Parent:ClearAllPoints()
 			self.Parent:SetPoint(self.A1, self.P, self.A2, self.StartX, self.StartY)
@@ -508,7 +542,7 @@ local AnimMethods = {
 			end
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 			
 			if self.IsRounded then
@@ -521,217 +555,217 @@ local AnimMethods = {
 	},
 	
 	fade = {
-		SetChange = function(self, alpha)
+		SetChange = function(self, alpha) -- animation:SetChange(alpha) --> Set the alpha change of a fade animation
 			self.EndAlphaSetting = alpha or 0
 		end,
 		
-		GetChange = function(self)
+		GetChange = function(self) -- animation:GetChange() --> Get the alpha change of a fade animation
 			return self.EndAlphaSetting
 		end,
 		
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the alpha progress of a fade animation
 			return self.CurrentValue
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 			self.Parent:SetAlpha(self.StartAlpha)
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 			self.Parent:SetAlpha(self.EndAlpha)
 		end,
 	},
 	
 	height = {
-		SetChange = function(self, height)
+		SetChange = function(self, height) -- animation:SetChange(height) --> Set the change of a height animation
 			self.EndHeightSetting = height or 0
 		end,
 		
-		GetChange = function(self)
+		GetChange = function(self) -- animation:GetChange() --> Get the change of a height animation
 			return self.EndHeightSetting
 		end,
 		
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of a height animation
 			return self.CurrentValue
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 			self.Parent:SetHeight(self.StartHeight)
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 			self.Parent:SetHeight(self.EndHeight)
 		end,
 	},
 	
 	width = {
-		SetChange = function(self, width)
+		SetChange = function(self, width) -- animation:SetChange(width) --> Set the change of a width animation
 			self.EndWidthSetting = width or 0
 		end,
 		
-		GetChange = function(self)
+		GetChange = function(self) -- animation:GetChange() --> Get the change of a width animation
 			return self.EndWidthSetting
 		end,
 		
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of a width animation
 			return self.CurrentValue
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 			self.Parent:SetWidth(self.StartWidth)
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 			self.Parent:SetWidth(self.EndWidth)
 		end,
 	},
 	
 	color = {
-		SetChange = function(self, r, g, b)
+		SetChange = function(self, r, g, b) -- animation:SetChange(r, g, b) --> Set the rgb change of a color animation
 			self.EndRSetting = r or 1
 			self.EndGSetting = g or 1
 			self.EndBSetting = b or 1
 		end,
 		
-		GetChange = function(self)
+		GetChange = function(self) -- animation:GetChange() --> Get the rgb change of a color animation
 			return self.EndRSetting, self.EndGSetting, self.EndBSetting
 		end,
 		
-		SetColorType = function(self, region)
-			region = lower(region)
+		SetColorType = function(self, region) -- animation:SetColorType() --> Define what a color animation will colorize
+			region = region:lower()
 			
 			self.ColorType = Set[region] and region or "border"
 		end,
 		
-		GetColorType = function(self)
+		GetColorType = function(self) -- animation:GetColorType() --> Get what a color animation will colorize
 			return self.ColorType
 		end,
 		
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of a color animation
 			return self.CurrentValue
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 			Set[self.ColorType](self.Parent, self.StartR, self.StartG, self.StartB)
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 			Set[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
 		end,
 	},
 	
 	progress = {
-		SetChange = function(self, value)
+		SetChange = function(self, value) -- animation:SetChange(seconds) --> Set the change of a progress animation
 			self.EndValueSetting = value or 0
 		end,
 		
-		GetChange = function(self)
+		GetChange = function(self) -- animation:GetChange() --> Get the change of a progress animation
 			return self.EndValueSetting
 		end,
 		
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of a progress animation
 			return self.CurrentValue
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 			self.Parent:SetValue(self.StartValue)
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 			self.Parent:SetValue(self.EndValue)
 		end,
 	},
 	
 	number = {
-		SetChange = function(self, value)
+		SetChange = function(self, value) -- animation:SetChange(num) --> Set the change of a number animation
 			self.EndNumberSetting = value or 0
 		end,
 		
-		GetChange = function(self)
+		GetChange = function(self) -- animation:GetChange() --> Get the change of a number animation
 			return self.EndNumberSetting
 		end,
 		
-		SetStart = function(self, value)
+		SetStart = function(self, value) -- animation:SetStart(num) --> Set the start value of a number animation
 			self.StartNumber = value
 		end,
 		
-		GetStart = function(self, value)
+		GetStart = function(self) -- animation:GetStart() --> Set the start value of a number animation
 			return self.StartNumber
 		end,
 		
-		SetPrefix = function(self, text)
+		SetPrefix = function(self, text) -- animation:SetPrefix(text) --> Set the prefix text of a number animation
 			self.Prefix = text or ""
 		end,
 		
-		GetPrefix = function(self)
+		GetPrefix = function(self) -- animation:GetPrefix() --> Get the prefix text of a number animation
 			return self.Prefix
 		end,
 		
-		SetPostfix = function(self, text)
+		SetPostfix = function(self, text) -- animation:SetPostfix() --> Set the postfix text of a number animation
 			self.Postfix = text or ""
 		end,
 		
-		GetPostfix = function(self)
+		GetPostfix = function(self) -- animation:GetPostfix() --> Get the postfix text of a number animation
 			return self.Postfix
 		end,
 		
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of a number animation
 			return self.CurrentValue
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 			self.Parent:SetText(self.StartNumber)
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 			self.Parent:SetText(self.EndNumber)
 		end,
 	},
 	
 	sleep = {
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of a sleep animation
 			return self.Timer
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 		end,
 	},
 	
 	scale = {
-		SetChange = function(self, width)
-			self.EndScaleSetting = width or 0
+		SetChange = function(self, scale) -- animation:SetChange(scale) --> Set the change of a scale animation
+			self.EndScaleSetting = scale or 0
 		end,
 		
-		GetChange = function(self)
+		GetChange = function(self) -- animation:GetChange() --> Get the change of a scale animation
 			return self.EndScaleSetting
 		end,
 		
-		GetProgress = function(self)
+		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of a scale animation
 			return self.CurrentValue
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 			self.Parent:SetScale(self.EndScale)
 		end,
@@ -775,11 +809,11 @@ local AnimMethods = {
 			return self.Frame
 		end,
 		
-		Reset = function(self)
+		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Timer = 0
 		end,
 		
-		Finish = function(self)
+		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
 		end,
 	},
@@ -847,20 +881,26 @@ local GroupMethods = {
 		return self.Looping
 	end,
 	
+	SetParent = function(self, parent)
+		self.Parent = parent
+	end,
+	
 	GetParent = function(self)
 		return self.Parent
 	end,
 	
 	SetScript = function(self, handler, func)
-		handler = lower(handler)
+		handler = handler:lower()
 		
-		if Callbacks[handler] then
-			Callbacks[handler][self] = func
+		if (not Callbacks[handler]) then
+			Callbacks[handler] = {}
 		end
+		
+		Callbacks[handler][self] = func
 	end,
 	
 	GetScript = function(self, handler)
-		handler = lower(handler)
+		handler = handler:lower()
 		
 		if (Callbacks[handler] and Callbacks[handler][self]) then
 			return Callbacks[handler][self]
@@ -868,14 +908,18 @@ local GroupMethods = {
 	end,
 	
 	Callback = function(self, handler)
-		handler = lower(handler)
+		handler = handler:lower()
 		
-		if Callbacks[handler][self] then
+		if (Callbacks[handler] and Callbacks[handler][self]) then
 			Callbacks[handler][self](self)
 		end
 	end,
 	
 	CheckOrder = function(self)
+		if (not self.Animations) then
+			return
+		end
+	
 		-- Check if we're done all animations at the current order, then proceed to the next order.
 		local NumAtOrder = 0
 		local NumDoneAtOrder = 0
@@ -907,6 +951,8 @@ local GroupMethods = {
 				end
 			end
 			
+			self:Callback("OnLoop")
+			
 			-- Play!
 			for i = 1, #self.Animations do
 				if (self.Animations[i].Order == self.Order) then
@@ -915,55 +961,12 @@ local GroupMethods = {
 			end
 		end
 	end,
-	
-	CreateAnimation = function(self, style)
-		style = lower(style)
-		
-		if (not Initialize[style]) then
-			return
-		end
-		
-		local Animation = {}
-		
-		-- General methods
-		for key, func in pairs(AnimMethods.All) do
-			Animation[key] = func
-		end
-		
-		-- Animation specific methods
-		if AnimMethods[style] then
-			for key, func in pairs(AnimMethods[style]) do
-				Animation[key] = func
-			end
-		end
-		
-		-- Set some attributes and defaults
-		Animation.Paused = false
-		Animation.Playing = false
-		Animation.Stopped = false
-		Animation.Looping = false
-		Animation.Type = style
-		Animation.Group = self
-		Animation.Parent = self.Parent
-		Animation.Order = 1
-		Animation.Duration = 0.3
-		Animation.Easing = "linear"
-		Animation.Update = Update[style]
-		
-		tinsert(self.Animations, Animation)
-		
-		return Animation
-	end,
 }
 
-CreateAnimationGroup = function(parent)
-	local Group = {Animations = {}}
+function LibAnim:CreateAnimationGroup(parent)
+	local Group = setmetatable(GroupMethods, Index)
 	
-	-- Add methods to the group
-	for key, func in pairs(GroupMethods) do
-		Group[key] = func
-	end
-	
+	Group.Animations = {}
 	Group.Parent = parent
 	Group.Playing = false
 	Group.Paused = false
@@ -972,6 +975,26 @@ CreateAnimationGroup = function(parent)
 	Group.MaxOrder = 1
 	
 	return Group
+end
+
+function LibAnim:CreateAnimation(parent, animtype)
+	if (not AnimMethods[animtype:lower()]) then
+		return
+	end
+	
+	local Animation = setmetatable(AnimMethods.All, {__index = setmetatable(AnimMethods[animtype:lower()], Index)})
+	
+	-- Set some attributes and defaults
+	Animation.Paused = false
+	Animation.Playing = false
+	Animation.Stopped = false
+	Animation.Looping = false
+	Animation.Type = animtype:lower()
+	Animation.Parent = parent
+	Animation.Duration = 0.3
+	Animation.Easing = "linear"
+	
+	return Animation
 end
 
 -- Movement
@@ -1049,7 +1072,10 @@ Update["fade"] = function(self, elapsed, i)
 		self.Parent:SetAlpha(self.EndAlpha)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self:GetGroup() then
+			self.Group:CheckOrder()
+		end
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, self.StartAlpha, self.Change, self.Duration)
 		self.Parent:SetAlpha(self.CurrentValue)
@@ -1078,7 +1104,10 @@ Update["height"] = function(self, elapsed, i)
 		self.Parent:SetHeight(self.EndHeight)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self:GetGroup() then
+			self.Group:CheckOrder()
+		end
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, self.StartHeight, self.HeightChange, self.Duration)
 		self.Parent:SetHeight(self.CurrentValue)
@@ -1107,7 +1136,10 @@ Update["width"] = function(self, elapsed, i)
 		self.Parent:SetWidth(self.EndWidth)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self:GetGroup() then
+			self.Group:CheckOrder()
+		end
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, self.StartWidth, self.WidthChange, self.Duration)
 		self.Parent:SetWidth(self.CurrentValue)
@@ -1134,7 +1166,10 @@ Update["color"] = function(self, elapsed, i)
 		Set[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self:GetGroup() then
+			self.Group:CheckOrder()
+		end
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, 0, self.Duration, self.Duration)
 		Set[self.ColorType](self.Parent, GetColor(self.Timer / self.Duration, self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
@@ -1159,7 +1194,10 @@ Update["progress"] = function(self, elapsed, i)
 		self.Parent:SetValue(self.EndValue)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self:GetGroup() then
+			self.Group:CheckOrder()
+		end
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, self.StartValue, self.ProgressChange, self.Duration)
 		self.Parent:SetValue(self.CurrentValue)
@@ -1180,7 +1218,10 @@ Update["sleep"] = function(self, elapsed, i)
 		tremove(Updater, i)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self:GetGroup() then
+			self.Group:CheckOrder()
+		end
 	end
 end
 
@@ -1294,6 +1335,3 @@ Update["frames"] = function(self, elapsed, i)
 		self.Throttle = self.Throttle + elapsed
 	end
 end
-
--- Global exposure
-_G["_LibAnim"] = Version
