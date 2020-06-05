@@ -1,3 +1,16 @@
+--[[
+	local LibAnim = LibStub:GetLibrary("LibAnim")
+	
+	if (not LibAnim) then return end
+	
+	LibAnim:CreateAnimation(object, type) --> Create an animation for the given object
+		
+		object: The frame/texture/fontstring to animate
+		type: "Move", "Fade", "Height", "Width", "Scale", "Progress", "Number", "Sleep", "Frames"
+	
+	LibAnim:CreateAnimationGroup(object) --> Create an animation group to control individual animations
+--]]
+
 local LibAnim = LibStub:NewLibrary("LibAnim", 1)
 
 if (not LibAnim) then
@@ -65,287 +78,6 @@ local Get = {
 	texture = Texture.GetVertexColor,
 	vertex = Texture.GetVertexColor,
 }
-
--- Linear easing
-Easing["linear"] = function(t, b, c, d)
-	return c * t / d + b
-end
-
--- Quadratic easing
-Easing["in-quadratic"] = function(t, b, c, d)
-	t = t / d
-	
-	return c * (t ^ 2) + b
-end
-
-Easing["out-quadratic"] = function(t, b, c, d)
-	t = t / d
-	
-	return -c * t * (t - 2) + b
-end
-
-Easing["inout-quadratic"] = function(t, b, c, d)
-	t = t / d * 2
-	
-	if (t < 1) then
-		return c / 2 * (t ^ 2) + b
-	else
-		return -c / 2 * ((t - 1) * (t - 3) - 1) + b
-	end
-end
-
--- Cubic easing
-Easing["in-cubic"] = function(t, b, c, d)
-	t = t / d
-	
-	return c * (t ^ 3) + b
-end
-
-Easing["out-cubic"] = function(t, b, c, d)
-	t = t / d - 1
-	
-	return c * (t ^ 3 + 1) + b
-end
-
-Easing["inout-cubic"] = function(t, b, c, d)
-	t = t / d * 2
-	
-	if (t < 1) then
-		return c / 2 * (t ^ 3) + b
-	else
-		t = t - 2
-		
-		return c / 2 * (t ^ 3 + 2) + b
-	end
-end
-
--- Quartic easing
-Easing["in-quartic"] = function(t, b, c, d)
-	t = t / d
-	
-	return c * (t ^ 4) + b
-end
-
-Easing["out-quartic"] = function(t, b, c, d)
-	t = t / d - 1
-	
-	return -c * (t ^ 4 - 1) + b
-end
-
-Easing["inout-quartic"] = function(t, b, c, d)
-	t = t / d * 2
-	
-	if (t < 1) then
-		return c / 2 * t ^ 4 + b
-	else
-		t = t - 2
-		
-		return -c / 2 * (t ^ 4 - 2) + b
-	end
-end
-
--- Quintic easing
-Easing["in-quintic"] = function(t, b, c, d)
-	t = t / d
-	
-	return c * (t ^ 5) + b
-end
-
-Easing["out-quintic"] = function(t, b, c, d)
-	t = t / d - 1
-	
-	return c * (t ^ 5 + 1) + b
-end
-
-Easing["inout-quintic"] = function(t, b, c, d)
-	t = t / d * 2
-	
-	if (t < 1) then
-		return c / 2 * t ^ 5 + b
-	else
-		t = t - 2
-		
-		return c / 2 * (t ^ 5 + 2) + b
-	end
-end
-
--- Sinusoidal easing
-Easing["in-sinusoidal"] = function(t, b, c, d)
-	return -c * cos(t / d * (pi / 2)) + c + b
-end
-
-Easing["out-sinusoidal"] = function(t, b, c, d)
-	return c * sin(t / d * (pi / 2)) + b
-end
-
-Easing["inout-sinusoidal"] = function(t, b, c, d)
-	return -c / 2 * (cos(pi * t / d) - 1) + b
-end
-
--- Exponential easing
-Easing["in-exponential"] = function(t, b, c, d)
-	if (t == 0) then
-		return b
-	else
-		return c * (2 ^ (10 * (t / d - 1))) + b - c * 0.001
-	end
-end
-
-Easing["out-exponential"] = function(t, b, c, d)
-	if (t == d) then
-		return b + c
-	else
-		return c * 1.001 * (-(2 ^ (-10 * t / d)) + 1) + b
-	end
-end
-
-Easing["inout-exponential"] = function(t, b, c, d)
-	if (t == 0) then
-		return b
-	end
-	
-	if (t == d) then
-		return b + c
-	end
-	
-	t = t / d * 2
-	
-	if (t < 1) then
-		return c / 2 * (2 ^ (10 * (t - 1))) + b - c * 0.0005
-	else
-		t = t - 1
-		
-		return c / 2 * 1.0005 * (-(2 ^ (-10 * t)) + 2) + b
-	end
-end
-
--- Circular easing
-Easing["in-circular"] = function(t, b, c, d)
-	t = t / d
-	
-	return (-c * (sqrt(1 - t * t) - 1) + b)
-end
-
-Easing["out-circular"] = function(t, b, c, d)
-	t = t / d - 1
-	
-	return (c * sqrt(1 - t * t) + b)
-end
-
-Easing["inout-circular"] = function(t, b, c, d)
-	t = t / d * 2
-	
-	if (t < 1) then
-		return -c / 2 * (sqrt(1 - t * t) - 1) + b
-	else
-		t = t - 2
-		
-		return c / 2 * (sqrt(1 - t * t) + 1) + b
-	end
-end
-
--- Bounce easing
-Easing["out-bounce"] = function(t, b, c, d)
-	t = t / d
-	
-	if (t < (1 / 2.75)) then
-		return c * (7.5625 * t * t) + b
-	elseif (t < (2 / 2.75)) then
-		t = t - (1.5 / 2.75)
-		
-		return c * (7.5625 * t * t + 0.75) + b
-	elseif (t < (2.5 / 2.75)) then
-		t = t - (2.25 / 2.75)
-		
-		return c * (7.5625 * t * t + 0.9375) + b
-	else
-		t = t - (2.625 / 2.75)
-		
-		return c * (7.5625 * t * t + 0.984375) + b
-	end
-end
-
-Easing["in-bounce"] = function(t, b, c, d)
-	return c - Easing["out-bounce"](d - t, 0, c, d) + b
-end
-
-Easing["inout-bounce"] = function(t, b, c, d)
-	if (t < d / 2) then
-		return Easing["in-bounce"](t * 2, 0, c, d) * 0.5 + b
-	else
-		return Easing["out-bounce"](t * 2 - d, 0, c, d) * 0.5 + c * 0.5 + b
-	end
-end
-
--- Elastic easing
-Easing["in-elastic"] = function(t, b, c, d)
-	if (t == 0) then
-		return b
-	end
-	
-	t = t / d
-	
-	if (t == 1) then
-		return b + c
-	end
-	
-	local a = c
-	local p = d * 0.3
-	local s = p / 4
-	
-	t = t - 1
-	
-	return -(a * 2 ^ (10 * t) * sin((t * d - s) * (2 * pi) / p)) + b
-end
-
-Easing["out-elastic"] = function(t, b, c, d)
-	if (t == 0) then
-		return b
-	end
-	
-	t = t / d
-	
-	if (t == 1) then
-		return b + c
-	end
-	
-	local a = c
-	local p = d * 0.3
-	local s = p / 4
-	
-	return a * 2 ^ (-10 * t) * sin((t * d - s) * (2 * pi) / p) + c + b
-end
-
-Easing["inout-elastic"] = function(t, b, c, d)
-	if (t == 0) then
-		return b
-	end
-	
-	t = t / d * 2
-	
-	if (t == 2) then
-		return b + c
-	end
-	
-	local a = c
-	local p = d * (0.3 * 1.5)
-	local s = p / 4
-	
-	if (t < 1) then
-		t = t - 1
-		
-		return -0.5 * (a * 2 ^ (10 * t) * sin((t * d - s) * (2 * pi) / p)) + b
-	else
-		t = t - 1
-		
-		return a * 2 ^ (-10 * t) * sin((t * d - s) * (2 * pi) / p ) * 0.5 + c + b
-	end
-end
-
--- Simple options
-Easing["in"] = Easing["in-quadratic"]
-Easing["out"] = Easing["out-quadratic"]
-Easing["inout"] = Easing["inout-quadratic"]
 
 local AnimMethods = {
 	All = {
@@ -972,6 +704,11 @@ local GroupMethods = {
 		end
 	end,
 	
+	--[[
+		These need reworking. I want animations to be independant objects now, that can be grouped if desired and run off the group rather than individually.
+		Previously groups were needed to run animations. I've gotten rid of that, but now I need to make sure that my existing functions accomodate this change.
+	--]]
+	
 	StartUpdating = function(self)
 		tinsert(Updater, self)
 		
@@ -989,7 +726,9 @@ local GroupMethods = {
 	end,
 }
 
-function LibAnim:CreateAnimationGroup(parent)
+-- Library functions
+
+function LibAnim:CreateAnimationGroup(parent) -- LibAnim:CreateAnimationGroup(object) --> Create an animation group to control individual animations
 	local Group = setmetatable(GroupMethods, Index)
 	
 	Group.Animations = {}
@@ -1003,7 +742,7 @@ function LibAnim:CreateAnimationGroup(parent)
 	return Group
 end
 
-function LibAnim:CreateAnimation(parent, animtype)
+function LibAnim:CreateAnimation(parent, animtype) -- LibAnim:CreateAnimation(object, type) --> Create an animation
 	if (not AnimMethods[animtype:lower()]) then
 		return
 	end
@@ -1022,6 +761,291 @@ function LibAnim:CreateAnimation(parent, animtype)
 	
 	return Animation
 end
+
+-- Easing types
+
+-- Linear easing
+Easing["linear"] = function(t, b, c, d)
+	return c * t / d + b
+end
+
+-- Quadratic easing
+Easing["in-quadratic"] = function(t, b, c, d)
+	t = t / d
+	
+	return c * (t ^ 2) + b
+end
+
+Easing["out-quadratic"] = function(t, b, c, d)
+	t = t / d
+	
+	return -c * t * (t - 2) + b
+end
+
+Easing["inout-quadratic"] = function(t, b, c, d)
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * (t ^ 2) + b
+	else
+		return -c / 2 * ((t - 1) * (t - 3) - 1) + b
+	end
+end
+
+-- Cubic easing
+Easing["in-cubic"] = function(t, b, c, d)
+	t = t / d
+	
+	return c * (t ^ 3) + b
+end
+
+Easing["out-cubic"] = function(t, b, c, d)
+	t = t / d - 1
+	
+	return c * (t ^ 3 + 1) + b
+end
+
+Easing["inout-cubic"] = function(t, b, c, d)
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * (t ^ 3) + b
+	else
+		t = t - 2
+		
+		return c / 2 * (t ^ 3 + 2) + b
+	end
+end
+
+-- Quartic easing
+Easing["in-quartic"] = function(t, b, c, d)
+	t = t / d
+	
+	return c * (t ^ 4) + b
+end
+
+Easing["out-quartic"] = function(t, b, c, d)
+	t = t / d - 1
+	
+	return -c * (t ^ 4 - 1) + b
+end
+
+Easing["inout-quartic"] = function(t, b, c, d)
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * t ^ 4 + b
+	else
+		t = t - 2
+		
+		return -c / 2 * (t ^ 4 - 2) + b
+	end
+end
+
+-- Quintic easing
+Easing["in-quintic"] = function(t, b, c, d)
+	t = t / d
+	
+	return c * (t ^ 5) + b
+end
+
+Easing["out-quintic"] = function(t, b, c, d)
+	t = t / d - 1
+	
+	return c * (t ^ 5 + 1) + b
+end
+
+Easing["inout-quintic"] = function(t, b, c, d)
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * t ^ 5 + b
+	else
+		t = t - 2
+		
+		return c / 2 * (t ^ 5 + 2) + b
+	end
+end
+
+-- Sinusoidal easing
+Easing["in-sinusoidal"] = function(t, b, c, d)
+	return -c * cos(t / d * (pi / 2)) + c + b
+end
+
+Easing["out-sinusoidal"] = function(t, b, c, d)
+	return c * sin(t / d * (pi / 2)) + b
+end
+
+Easing["inout-sinusoidal"] = function(t, b, c, d)
+	return -c / 2 * (cos(pi * t / d) - 1) + b
+end
+
+-- Exponential easing
+Easing["in-exponential"] = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	else
+		return c * (2 ^ (10 * (t / d - 1))) + b - c * 0.001
+	end
+end
+
+Easing["out-exponential"] = function(t, b, c, d)
+	if (t == d) then
+		return b + c
+	else
+		return c * 1.001 * (-(2 ^ (-10 * t / d)) + 1) + b
+	end
+end
+
+Easing["inout-exponential"] = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	end
+	
+	if (t == d) then
+		return b + c
+	end
+	
+	t = t / d * 2
+	
+	if (t < 1) then
+		return c / 2 * (2 ^ (10 * (t - 1))) + b - c * 0.0005
+	else
+		t = t - 1
+		
+		return c / 2 * 1.0005 * (-(2 ^ (-10 * t)) + 2) + b
+	end
+end
+
+-- Circular easing
+Easing["in-circular"] = function(t, b, c, d)
+	t = t / d
+	
+	return (-c * (sqrt(1 - t * t) - 1) + b)
+end
+
+Easing["out-circular"] = function(t, b, c, d)
+	t = t / d - 1
+	
+	return (c * sqrt(1 - t * t) + b)
+end
+
+Easing["inout-circular"] = function(t, b, c, d)
+	t = t / d * 2
+	
+	if (t < 1) then
+		return -c / 2 * (sqrt(1 - t * t) - 1) + b
+	else
+		t = t - 2
+		
+		return c / 2 * (sqrt(1 - t * t) + 1) + b
+	end
+end
+
+-- Bounce easing
+Easing["out-bounce"] = function(t, b, c, d)
+	t = t / d
+	
+	if (t < (1 / 2.75)) then
+		return c * (7.5625 * t * t) + b
+	elseif (t < (2 / 2.75)) then
+		t = t - (1.5 / 2.75)
+		
+		return c * (7.5625 * t * t + 0.75) + b
+	elseif (t < (2.5 / 2.75)) then
+		t = t - (2.25 / 2.75)
+		
+		return c * (7.5625 * t * t + 0.9375) + b
+	else
+		t = t - (2.625 / 2.75)
+		
+		return c * (7.5625 * t * t + 0.984375) + b
+	end
+end
+
+Easing["in-bounce"] = function(t, b, c, d)
+	return c - Easing["out-bounce"](d - t, 0, c, d) + b
+end
+
+Easing["inout-bounce"] = function(t, b, c, d)
+	if (t < d / 2) then
+		return Easing["in-bounce"](t * 2, 0, c, d) * 0.5 + b
+	else
+		return Easing["out-bounce"](t * 2 - d, 0, c, d) * 0.5 + c * 0.5 + b
+	end
+end
+
+-- Elastic easing
+Easing["in-elastic"] = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	end
+	
+	t = t / d
+	
+	if (t == 1) then
+		return b + c
+	end
+	
+	local a = c
+	local p = d * 0.3
+	local s = p / 4
+	
+	t = t - 1
+	
+	return -(a * 2 ^ (10 * t) * sin((t * d - s) * (2 * pi) / p)) + b
+end
+
+Easing["out-elastic"] = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	end
+	
+	t = t / d
+	
+	if (t == 1) then
+		return b + c
+	end
+	
+	local a = c
+	local p = d * 0.3
+	local s = p / 4
+	
+	return a * 2 ^ (-10 * t) * sin((t * d - s) * (2 * pi) / p) + c + b
+end
+
+Easing["inout-elastic"] = function(t, b, c, d)
+	if (t == 0) then
+		return b
+	end
+	
+	t = t / d * 2
+	
+	if (t == 2) then
+		return b + c
+	end
+	
+	local a = c
+	local p = d * (0.3 * 1.5)
+	local s = p / 4
+	
+	if (t < 1) then
+		t = t - 1
+		
+		return -0.5 * (a * 2 ^ (10 * t) * sin((t * d - s) * (2 * pi) / p)) + b
+	else
+		t = t - 1
+		
+		return a * 2 ^ (-10 * t) * sin((t * d - s) * (2 * pi) / p ) * 0.5 + c + b
+	end
+end
+
+-- Simple options
+Easing["in"] = Easing["in-quadratic"]
+Easing["out"] = Easing["out-quadratic"]
+Easing["inout"] = Easing["inout-quadratic"]
+
+-- Animation types
 
 -- Movement
 Initialize["move"] = function(self)
@@ -1043,7 +1067,7 @@ Initialize["move"] = function(self)
 	self.YChange = self.EndY - self.StartY
 	
 	if self.IsRounded then
-		if (self.XChange == 0 or self.YChange == 0) then -- Double check if we're valid to be rounded
+		if (self.XChange == 0 or self.YChange == 0) then -- check if we're valid to be rounded
 			self.IsRounded = false
 		else
 			self.ModTimer = 0
