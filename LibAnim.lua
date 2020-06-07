@@ -57,7 +57,7 @@ local OnUpdate = function(self, elapsed)
 	end
 end
 
-local GetColor = function(p, r1, g1, b1, r2, g2, b2)
+local TweenColor = function(p, r1, g1, b1, r2, g2, b2)
 	return r1 + (r2 - r1) * p, g1 + (g2 - g1) * p, b1 + (b2 - b1) * p
 end
 
@@ -1222,7 +1222,7 @@ Update["color"] = function(self, elapsed, i)
 		end
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, 0, self.Duration, self.Duration)
-		Set[self.ColorType](self.Parent, GetColor(self.Timer / self.Duration, self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
+		Set[self.ColorType](self.Parent, TweenColor(self.Timer / self.Duration, self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
 	end
 end
 
