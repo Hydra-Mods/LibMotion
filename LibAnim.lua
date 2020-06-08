@@ -28,13 +28,13 @@ local tinsert = table.insert
 local tremove = table.remove
 local pairs = pairs
 local rawget = rawget
+
 local Updater = CreateFrame("StatusBar")
 local Texture = Updater:CreateTexture()
 local FontString = Updater:CreateFontString()
 local Initialize = {}
 local Update = {}
 local Easing = {}
-
 local Callbacks = {} -- OnPlay, OnPause, OnResume, OnStop, OnReset, OnFinished, OnLoop
 
 local Index = {
