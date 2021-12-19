@@ -3,10 +3,21 @@
 	
 	if (not LibAnim) then return end
 	
-	LibAnim:CreateAnimation(object, type) --> Create an animation for the given object
+	LibAnim:CreateAnimation(object, type) --> Create an animation for the given object (frame/texture/fontstring)
 		
-		object: The frame/texture/fontstring to animate
-		type: "Move", "Fade", "Height", "Width", "Scale", "Progress", "Number", "Sleep", "Frames"
+		type:
+			"Move"     - Move the position of the object
+			"Fade"     - Animate the opacity of the object
+			"Height"   - Animate the height of the object
+			"Width"    - Animate the width of the object
+			"Scale"    - Animate the scale of the object
+			"Progress" - Animate the statusbar position (statusbar only)
+			"Number"   - Animate number updates (fontstring only)
+			"Sleep"    - Used to create pauses, no animation
+			"Frames"   - WIP. animate textures akin to the minimap LFG eye
+			
+		returns:
+			animation object
 	
 	LibAnim:CreateAnimationGroup(object) --> Create an animation group to control individual animations
 --]]
@@ -24,9 +35,7 @@ local mod = math.fmod
 local sqrt = math.sqrt
 local ceil = math.ceil
 local floor = math.floor
-local tinsert = table.insert
 local tremove = table.remove
-local pairs = pairs
 local rawget = rawget
 
 local Updater = CreateFrame("StatusBar")
@@ -81,6 +90,14 @@ local Get = {
 
 local AnimMethods = {
 	All = {
+		-- Default attributes
+		Paused = false,
+		Playing = false,
+		Stopped = false,
+		Looping = false,
+		Duration = 0.3,
+		Easing = "linear",
+		
 		Play = function(self) -- animation:Play() --> Play the animation
 			if (not self.Paused) then
 				if Initialize[self.Type] then
@@ -169,6 +186,10 @@ local AnimMethods = {
 		end,
 		
 		SetOrder = function(self, order) -- animation:SetOrder(num) --> Set the play order of the animation, if it belongs to a group
+			if (not self.Group) then
+				return
+			end
+			
 			self.Order = order or 1
 			
 			if (order > self.Group.MaxOrder) then
@@ -196,7 +217,7 @@ local AnimMethods = {
 			self.Order = 1
 			self.Group = group
 			
-			tinsert(group.Animations, self)
+			group.Animations[#group.Animations + 1] = self
 			
 			return self.Group
 		end,
@@ -206,11 +227,13 @@ local AnimMethods = {
 		end,
 		
 		Ungroup = function(self) -- animation:Ungroup() --> Remove the animation from its group
-			if self.Group then
-				for i = 1, #self.Group.Animations do
-					if self.Group.Animations[i] == self then
-						tremove(self.Group, i)
-					end
+			if (not self.Group) then
+				return
+			end
+			
+			for i = 1, #self.Group.Animations do
+				if (self.Group.Animations[i] == self) then
+					tremove(self.Group, i)
 				end
 			end
 		end,
@@ -240,7 +263,7 @@ local AnimMethods = {
 		end,
 		
 		StartUpdating = function(self) -- animation:StartUpdating() --> Start updating the animation. This is called by :Play()
-			tinsert(Updater, self)
+			Updater[#Updater + 1] = self
 			
 			if (not Updater:GetScript("OnUpdate")) then
 				Updater:SetScript("OnUpdate", OnUpdate)
@@ -562,6 +585,13 @@ local AnimMethods = {
 }
 
 local GroupMethods = {
+	Playing = false,
+	Paused = false,
+	Stopped = false,
+	Order = 1,
+	MaxOrder = 1,
+	Animations = {},
+	
 	Play = function(self)
 		for i = 1, #self.Animations do
 			if (self.Animations[i].Order == self.Order) then
@@ -710,7 +740,7 @@ local GroupMethods = {
 	--]]
 	
 	StartUpdating = function(self)
-		tinsert(Updater, self)
+		Updater[#Updater + 1] = self
 		
 		if (not Updater:GetScript("OnUpdate")) then
 			Updater:SetScript("OnUpdate", OnUpdate)
@@ -731,13 +761,7 @@ local GroupMethods = {
 function LibAnim:CreateAnimationGroup(parent) -- LibAnim:CreateAnimationGroup(object) --> Create an animation group to control individual animations
 	local Group = setmetatable(GroupMethods, Index)
 	
-	Group.Animations = {}
 	Group.Parent = parent
-	Group.Playing = false
-	Group.Paused = false
-	Group.Stopped = false
-	Group.Order = 1
-	Group.MaxOrder = 1
 	
 	return Group
 end
@@ -750,14 +774,8 @@ function LibAnim:CreateAnimation(parent, animtype) -- LibAnim:CreateAnimation(ob
 	local Animation = setmetatable(AnimMethods.All, {__index = setmetatable(AnimMethods[animtype:lower()], Index)})
 	
 	-- Set some attributes and defaults
-	Animation.Paused = false
-	Animation.Playing = false
-	Animation.Stopped = false
-	Animation.Looping = false
 	Animation.Type = animtype:lower()
 	Animation.Parent = parent
-	Animation.Duration = 0.3
-	Animation.Easing = "linear"
 	
 	return Animation
 end
@@ -765,24 +783,24 @@ end
 -- Easing types
 
 -- Linear easing
-Easing["linear"] = function(t, b, c, d)
+Easing.linear = function(t, b, c, d)
 	return c * t / d + b
 end
 
 -- Quadratic easing
-Easing["in-quadratic"] = function(t, b, c, d)
+Easing.inquadratic = function(t, b, c, d)
 	t = t / d
 	
 	return c * (t ^ 2) + b
 end
 
-Easing["out-quadratic"] = function(t, b, c, d)
+Easing.outquadratic = function(t, b, c, d)
 	t = t / d
 	
 	return -c * t * (t - 2) + b
 end
 
-Easing["inout-quadratic"] = function(t, b, c, d)
+Easing.inoutquadratic = function(t, b, c, d)
 	t = t / d * 2
 	
 	if (t < 1) then
@@ -793,19 +811,19 @@ Easing["inout-quadratic"] = function(t, b, c, d)
 end
 
 -- Cubic easing
-Easing["in-cubic"] = function(t, b, c, d)
+Easing.incubic = function(t, b, c, d)
 	t = t / d
 	
 	return c * (t ^ 3) + b
 end
 
-Easing["out-cubic"] = function(t, b, c, d)
+Easing.outcubic = function(t, b, c, d)
 	t = t / d - 1
 	
 	return c * (t ^ 3 + 1) + b
 end
 
-Easing["inout-cubic"] = function(t, b, c, d)
+Easing.inoutcubic = function(t, b, c, d)
 	t = t / d * 2
 	
 	if (t < 1) then
@@ -818,19 +836,19 @@ Easing["inout-cubic"] = function(t, b, c, d)
 end
 
 -- Quartic easing
-Easing["in-quartic"] = function(t, b, c, d)
+Easing.inquartic = function(t, b, c, d)
 	t = t / d
 	
 	return c * (t ^ 4) + b
 end
 
-Easing["out-quartic"] = function(t, b, c, d)
+Easing.outquartic = function(t, b, c, d)
 	t = t / d - 1
 	
 	return -c * (t ^ 4 - 1) + b
 end
 
-Easing["inout-quartic"] = function(t, b, c, d)
+Easing.inoutquartic = function(t, b, c, d)
 	t = t / d * 2
 	
 	if (t < 1) then
@@ -843,19 +861,19 @@ Easing["inout-quartic"] = function(t, b, c, d)
 end
 
 -- Quintic easing
-Easing["in-quintic"] = function(t, b, c, d)
+Easing.inquintic = function(t, b, c, d)
 	t = t / d
 	
 	return c * (t ^ 5) + b
 end
 
-Easing["out-quintic"] = function(t, b, c, d)
+Easing.outquintic = function(t, b, c, d)
 	t = t / d - 1
 	
 	return c * (t ^ 5 + 1) + b
 end
 
-Easing["inout-quintic"] = function(t, b, c, d)
+Easing.inoutquintic = function(t, b, c, d)
 	t = t / d * 2
 	
 	if (t < 1) then
@@ -868,20 +886,20 @@ Easing["inout-quintic"] = function(t, b, c, d)
 end
 
 -- Sinusoidal easing
-Easing["in-sinusoidal"] = function(t, b, c, d)
+Easing.insinusoidal = function(t, b, c, d)
 	return -c * cos(t / d * (pi / 2)) + c + b
 end
 
-Easing["out-sinusoidal"] = function(t, b, c, d)
+Easing.outsinusoidal = function(t, b, c, d)
 	return c * sin(t / d * (pi / 2)) + b
 end
 
-Easing["inout-sinusoidal"] = function(t, b, c, d)
+Easing.inoutsinusoidal = function(t, b, c, d)
 	return -c / 2 * (cos(pi * t / d) - 1) + b
 end
 
 -- Exponential easing
-Easing["in-exponential"] = function(t, b, c, d)
+Easing.inexponential = function(t, b, c, d)
 	if (t == 0) then
 		return b
 	else
@@ -889,7 +907,7 @@ Easing["in-exponential"] = function(t, b, c, d)
 	end
 end
 
-Easing["out-exponential"] = function(t, b, c, d)
+Easing.outexponential = function(t, b, c, d)
 	if (t == d) then
 		return b + c
 	else
@@ -897,7 +915,7 @@ Easing["out-exponential"] = function(t, b, c, d)
 	end
 end
 
-Easing["inout-exponential"] = function(t, b, c, d)
+Easing.inoutexponential = function(t, b, c, d)
 	if (t == 0) then
 		return b
 	end
@@ -918,19 +936,19 @@ Easing["inout-exponential"] = function(t, b, c, d)
 end
 
 -- Circular easing
-Easing["in-circular"] = function(t, b, c, d)
+Easing.incircular = function(t, b, c, d)
 	t = t / d
 	
 	return (-c * (sqrt(1 - t * t) - 1) + b)
 end
 
-Easing["out-circular"] = function(t, b, c, d)
+Easing.outcircular = function(t, b, c, d)
 	t = t / d - 1
 	
 	return (c * sqrt(1 - t * t) + b)
 end
 
-Easing["inout-circular"] = function(t, b, c, d)
+Easing.inoutcircular = function(t, b, c, d)
 	t = t / d * 2
 	
 	if (t < 1) then
@@ -943,7 +961,7 @@ Easing["inout-circular"] = function(t, b, c, d)
 end
 
 -- Bounce easing
-Easing["out-bounce"] = function(t, b, c, d)
+Easing.outbounce = function(t, b, c, d)
 	t = t / d
 	
 	if (t < (1 / 2.75)) then
@@ -963,20 +981,20 @@ Easing["out-bounce"] = function(t, b, c, d)
 	end
 end
 
-Easing["in-bounce"] = function(t, b, c, d)
-	return c - Easing["out-bounce"](d - t, 0, c, d) + b
+Easing.inbounce = function(t, b, c, d)
+	return c - Easing.outbounce(d - t, 0, c, d) + b
 end
 
-Easing["inout-bounce"] = function(t, b, c, d)
+Easing.inoutbounce = function(t, b, c, d)
 	if (t < d / 2) then
-		return Easing["in-bounce"](t * 2, 0, c, d) * 0.5 + b
+		return Easing.inbounce(t * 2, 0, c, d) * 0.5 + b
 	else
-		return Easing["out-bounce"](t * 2 - d, 0, c, d) * 0.5 + c * 0.5 + b
+		return Easing.outbounce(t * 2 - d, 0, c, d) * 0.5 + c * 0.5 + b
 	end
 end
 
 -- Elastic easing
-Easing["in-elastic"] = function(t, b, c, d)
+Easing.inelastic = function(t, b, c, d)
 	if (t == 0) then
 		return b
 	end
@@ -996,7 +1014,7 @@ Easing["in-elastic"] = function(t, b, c, d)
 	return -(a * 2 ^ (10 * t) * sin((t * d - s) * (2 * pi) / p)) + b
 end
 
-Easing["out-elastic"] = function(t, b, c, d)
+Easing.outelastic = function(t, b, c, d)
 	if (t == 0) then
 		return b
 	end
@@ -1014,7 +1032,7 @@ Easing["out-elastic"] = function(t, b, c, d)
 	return a * 2 ^ (-10 * t) * sin((t * d - s) * (2 * pi) / p) + c + b
 end
 
-Easing["inout-elastic"] = function(t, b, c, d)
+Easing.inoutelastic = function(t, b, c, d)
 	if (t == 0) then
 		return b
 	end
@@ -1041,14 +1059,14 @@ Easing["inout-elastic"] = function(t, b, c, d)
 end
 
 -- Simple options
-Easing["in"] = Easing["in-quadratic"]
-Easing["out"] = Easing["out-quadratic"]
-Easing["inout"] = Easing["inout-quadratic"]
+Easing['in'] = Easing.inquadratic
+Easing.out = Easing.outquadratic
+Easing.inout = Easing.inoutquadratic
 
 -- Animation types
 
 -- Movement
-Initialize["move"] = function(self)
+Initialize.move = function(self)
 	if self.Playing then
 		return
 	end
@@ -1077,7 +1095,7 @@ Initialize["move"] = function(self)
 	self:StartUpdating()
 end
 
-Update["move"] = function(self, elapsed, i)
+Update.move = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1101,7 +1119,7 @@ Update["move"] = function(self, elapsed, i)
 end
 
 -- Fade
-Initialize["fade"] = function(self)
+Initialize.fade = function(self)
 	if self.Playing then
 		return
 	end
@@ -1114,7 +1132,7 @@ Initialize["fade"] = function(self)
 	self:StartUpdating()
 end
 
-Update["fade"] = function(self, elapsed, i)
+Update.fade = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1123,7 +1141,7 @@ Update["fade"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		
-		if self:GetGroup() then
+		if self.Group then
 			self.Group:CheckOrder()
 		end
 	else
@@ -1133,7 +1151,7 @@ Update["fade"] = function(self, elapsed, i)
 end
 
 -- Height
-Initialize["height"] = function(self)
+Initialize.height = function(self)
 	if self.Playing then
 		return
 	end
@@ -1146,7 +1164,7 @@ Initialize["height"] = function(self)
 	self:StartUpdating()
 end
 
-Update["height"] = function(self, elapsed, i)
+Update.height = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1155,7 +1173,7 @@ Update["height"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		
-		if self:GetGroup() then
+		if self.Group then
 			self.Group:CheckOrder()
 		end
 	else
@@ -1165,7 +1183,7 @@ Update["height"] = function(self, elapsed, i)
 end
 
 -- Width
-Initialize["width"] = function(self)
+Initialize.width = function(self)
 	if self.Playing then
 		return
 	end
@@ -1178,7 +1196,7 @@ Initialize["width"] = function(self)
 	self:StartUpdating()
 end
 
-Update["width"] = function(self, elapsed, i)
+Update.width = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1187,7 +1205,7 @@ Update["width"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		
-		if self:GetGroup() then
+		if self.Group then
 			self.Group:CheckOrder()
 		end
 	else
@@ -1197,7 +1215,7 @@ Update["width"] = function(self, elapsed, i)
 end
 
 -- Color
-Initialize["color"] = function(self)
+Initialize.color = function(self)
 	self.Timer = 0
 	self.ColorType = self.ColorType or "backdrop"
 	self.StartR, self.StartG, self.StartB = Get[self.ColorType](self.Parent)
@@ -1208,7 +1226,7 @@ Initialize["color"] = function(self)
 	self:StartUpdating()
 end
 
-Update["color"] = function(self, elapsed, i)
+Update.color = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1217,7 +1235,7 @@ Update["color"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		
-		if self:GetGroup() then
+		if self.Group then
 			self.Group:CheckOrder()
 		end
 	else
@@ -1227,7 +1245,7 @@ Update["color"] = function(self, elapsed, i)
 end
 
 -- Progress
-Initialize["progress"] = function(self)
+Initialize.progress = function(self)
 	self.Timer = 0
 	self.StartValue = self.Parent:GetValue() or 0
 	self.EndValue = self.EndValueSetting or 0
@@ -1236,7 +1254,7 @@ Initialize["progress"] = function(self)
 	self:StartUpdating()
 end
 
-Update["progress"] = function(self, elapsed, i)
+Update.progress = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1245,7 +1263,7 @@ Update["progress"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		
-		if self:GetGroup() then
+		if self.Group then
 			self.Group:CheckOrder()
 		end
 	else
@@ -1255,13 +1273,13 @@ Update["progress"] = function(self, elapsed, i)
 end
 
 -- Sleep
-Initialize["sleep"] = function(self)
+Initialize.sleep = function(self)
 	self.Timer = 0
 	
 	self:StartUpdating()
 end
 
-Update["sleep"] = function(self, elapsed, i)
+Update.sleep = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1269,14 +1287,14 @@ Update["sleep"] = function(self, elapsed, i)
 		self.Playing = false
 		self:Callback("OnFinished")
 		
-		if self:GetGroup() then
+		if self.Group then
 			self.Group:CheckOrder()
 		end
 	end
 end
 
 -- Number
-Initialize["number"] = function(self)
+Initialize.number = function(self)
 	self.Timer = 0
 	
 	if (not self.StartNumber) then
@@ -1291,7 +1309,7 @@ Initialize["number"] = function(self)
 	self:StartUpdating()
 end
 
-Update["number"] = function(self, elapsed, i)
+Update.number = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1299,7 +1317,10 @@ Update["number"] = function(self, elapsed, i)
 		self.Parent:SetText(self.Prefix..floor(self.EndNumber)..self.Postfix)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self.Group then
+			self.Group:CheckOrder()
+		end
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, self.StartNumber, self.NumberChange, self.Duration)
 		self.Parent:SetText(self.Prefix..floor(self.CurrentValue)..self.Postfix)
@@ -1307,7 +1328,7 @@ Update["number"] = function(self, elapsed, i)
 end
 
 -- Scale
-Initialize["scale"] = function(self)
+Initialize.scale = function(self)
 	if self.Playing then
 		return
 	end
@@ -1320,7 +1341,7 @@ Initialize["scale"] = function(self)
 	self:StartUpdating()
 end
 
-Update["scale"] = function(self, elapsed, i)
+Update.scale = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
@@ -1328,7 +1349,10 @@ Update["scale"] = function(self, elapsed, i)
 		self.Parent:SetScale(self.EndScale)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self.Group then
+			self.Group:CheckOrder()
+		end
 	else
 		self.CurrentValue = Easing[self.Easing](self.Timer, self.StartScale, self.ScaleChange, self.Duration)
 		self.Parent:SetScale(self.CurrentValue)
@@ -1336,7 +1360,7 @@ Update["scale"] = function(self, elapsed, i)
 end
 
 -- Frames
-Initialize["frames"] = function(self)
+Initialize.frames = function(self)
 	if self.Playing then
 		return
 	end
@@ -1357,14 +1381,17 @@ Initialize["frames"] = function(self)
 	self:StartUpdating()
 end
 
-Update["frames"] = function(self, elapsed, i)
+Update.frames = function(self, elapsed, i)
 	self.Timer = self.Timer + elapsed
 	
 	if (self.Timer >= self.Duration) then
 		tremove(Updater, i)
 		self.Playing = false
 		self:Callback("OnFinished")
-		self.Group:CheckOrder()
+		
+		if self.Group then
+			self.Group:CheckOrder()
+		end
 	else
 		if (self.Throttle > self.Delay) then
 			local Advance = floor(self.Throttle / self.Delay)
