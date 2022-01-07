@@ -11,6 +11,7 @@
 			"Height"   - Animate the height of the object
 			"Width"    - Animate the width of the object
 			"Scale"    - Animate the scale of the object
+			"Color"    - Animate a color change (border/backdrop/texture/statusbar/font)
 			"Progress" - Animate the statusbar position (statusbar only)
 			"Number"   - Animate number updates (fontstring only)
 			"Sleep"    - Used to create pauses, no animation
@@ -88,193 +89,193 @@ local Get = {
 	vertex = Texture.GetVertexColor,
 }
 
-local AnimMethods = {
-	All = {
-		-- Default attributes
-		Paused = false,
-		Playing = false,
-		Stopped = false,
-		Looping = false,
-		Duration = 0.3,
-		Easing = "linear",
-		
-		Play = function(self) -- animation:Play() --> Play the animation
-			if (not self.Paused) then
-				if Initialize[self.Type] then
-					Initialize[self.Type](self)
-					self:Callback("OnPlay")
-				end
-			else
-				self:StartUpdating()
-				self:Callback("OnResume")
-			end
-			
-			self.Playing = true
-			self.Paused = false
-			self.Stopped = false
-		end,
-		
-		IsPlaying = function(self) -- animation:IsPlaying() --> Return playing state of the animation
-			return self.Playing
-		end,
-		
-		Pause = function(self) -- animation:Pause() --> Pause the animation
-			for i = 1, #Updater do
-				if (Updater[i] == self) then
-					tremove(Updater, i)
-					
-					break
-				end
-			end
-			
-			self.Playing = false
-			self.Paused = true
-			self.Stopped = false
-			self:Callback("OnPause")
-		end,
-		
-		IsPaused = function(self) -- animation:IsPaused() --> Return paused state of the animation
-			return self.Paused
-		end,
-		
-		Stop = function(self, reset) -- animation:Stop(reset) --> Stop the animation. Optional argument resets the animation to its pre-played state
-			for i = 1, #Updater do
-				if (Updater[i] == self) then
-					tremove(Updater, i)
-					
-					break
-				end
-			end
-			
-			self.Playing = false
-			self.Paused = false
-			self.Stopped = true
-			self.Timer = 0
-			
-			if reset then
-				self:Reset()
-				self:Callback("OnReset")
-			else
-				self:Callback("OnStop")
-			end
-		end,
-		
-		IsStopped = function(self) -- animation:IsStopped() --> Return stopped state of the animation
-			return self.Stopped
-		end,
-		
-		SetEasing = function(self, easing) -- animation:SetEasing(easing) --> Set the easing of the animation
-			easing = easing:lower()
-			
-			self.Easing = Easing[easing] and easing or "linear"
-		end,
-		
-		GetEasing = function(self) -- animation:GetEasing() --> Get the easing of the animation
-			return self.Easing
-		end,
-		
-		SetDuration = function(self, duration) -- animation:SetDuration(seconds) --> Set the duration of the animation
-			self.Duration = duration or 0
-		end,
-		
-		GetDuration = function(self) -- animation:GetDuration() --> Get the duration of the animation in seconds
-			return self.Duration
-		end,
-		
-		GetProgressByTimer = function(self) -- animation:GetProgressByTimer() --> Get the progress of the animation in seconds
-			return self.Timer
-		end,
-		
-		SetOrder = function(self, order) -- animation:SetOrder(num) --> Set the play order of the animation, if it belongs to a group
-			if (not self.Group) then
-				return
-			end
-			
-			self.Order = order or 1
-			
-			if (order > self.Group.MaxOrder) then
-				self.Group.MaxOrder = order
-			end
-		end,
-		
-		GetOrder = function(self) -- animation:GetOrder() --> Get the play order of the animation
-			return self.Order
-		end,
-		
-		SetParent = function(self, parent) -- animation:SetParent(object) --> Set the object that the animation controls
-			self.Parent = parent
-		end,
-		
-		GetParent = function(self) -- animation:GetParent() --> Get the object that the animation controls
-			return self.Parent
-		end,
-		
-		SetGroup = function(self, group) -- animation:SetGroup(group) --> Add the animation to a group
-			if (not group.Animations) then
-				group.Animations = {}
-			end
-			
-			self.Order = 1
-			self.Group = group
-			
-			group.Animations[#group.Animations + 1] = self
-			
-			return self.Group
-		end,
-		
-		GetGroup = function(self) -- animation:GetGroup() --> Get the animation group
-			return self.Group
-		end,
-		
-		Ungroup = function(self) -- animation:Ungroup() --> Remove the animation from its group
-			if (not self.Group) then
-				return
-			end
-			
-			for i = 1, #self.Group.Animations do
-				if (self.Group.Animations[i] == self) then
-					tremove(self.Group, i)
-				end
-			end
-		end,
-		
-		SetScript = function(self, handler, func) -- animation:SetScript(handler, func) --> Set a callback to be fired on an event
-			handler = handler:lower()
-			
-			if Callbacks[handler] then
-				Callbacks[handler][self] = func
-			end
-		end,
-		
-		GetScript = function(self, handler) -- animation:GetScript(handler) --> Get the callback to be fired on an event
-			handler = handler:lower()
-			
-			if (Callbacks[handler] and Callbacks[handler][self]) then
-				return Callbacks[handler][self]
-			end
-		end,
-		
-		Callback = function(self, handler) -- animation:Callback(handler) --> Fire a callback on an event
-			handler = handler:lower()
-			
-			if (Callbacks[handler] and Callbacks[handler][self]) then
-				Callbacks[handler][self](self)
-			end
-		end,
-		
-		StartUpdating = function(self) -- animation:StartUpdating() --> Start updating the animation. This is called by :Play()
-			Updater[#Updater + 1] = self
-			
-			if (not Updater:GetScript("OnUpdate")) then
-				Updater:SetScript("OnUpdate", OnUpdate)
-			end
-		end,
-		
-		Update = function(self, elapsed, index) -- animation:Update() --> The update function of the animation. Called while the animation is playing
-			Update[self.Type](self, elapsed, index)
-		end,
-	},
+local Prototype = {
+	-- Default attributes
+	Paused = false,
+	Playing = false,
+	Stopped = false,
+	Looping = false,
+	Duration = 0.3,
+	Easing = "linear",
 	
+	Play = function(self) -- animation:Play() --> Play the animation
+		if (not self.Paused) then
+			if Initialize[self.Type] then
+				Initialize[self.Type](self)
+				self:Callback("OnPlay")
+			end
+		else
+			self:StartUpdating()
+			self:Callback("OnResume")
+		end
+		
+		self.Playing = true
+		self.Paused = false
+		self.Stopped = false
+	end,
+	
+	IsPlaying = function(self) -- animation:IsPlaying() --> Return playing state of the animation
+		return self.Playing
+	end,
+	
+	Pause = function(self) -- animation:Pause() --> Pause the animation
+		for i = 1, #Updater do
+			if (Updater[i] == self) then
+				tremove(Updater, i)
+				
+				break
+			end
+		end
+		
+		self.Playing = false
+		self.Paused = true
+		self.Stopped = false
+		self:Callback("OnPause")
+	end,
+	
+	IsPaused = function(self) -- animation:IsPaused() --> Return paused state of the animation
+		return self.Paused
+	end,
+	
+	Stop = function(self, reset) -- animation:Stop(reset) --> Stop the animation. Optional argument resets the animation to its pre-played state
+		for i = 1, #Updater do
+			if (Updater[i] == self) then
+				tremove(Updater, i)
+				
+				break
+			end
+		end
+		
+		self.Playing = false
+		self.Paused = false
+		self.Stopped = true
+		self.Timer = 0
+		
+		if reset then
+			self:Reset()
+			self:Callback("OnReset")
+		else
+			self:Callback("OnStop")
+		end
+	end,
+	
+	IsStopped = function(self) -- animation:IsStopped() --> Return stopped state of the animation
+		return self.Stopped
+	end,
+	
+	SetEasing = function(self, easing) -- animation:SetEasing(easing) --> Set the easing of the animation
+		easing = easing:lower()
+		
+		self.Easing = Easing[easing] and easing or "linear"
+	end,
+	
+	GetEasing = function(self) -- animation:GetEasing() --> Get the easing of the animation
+		return self.Easing
+	end,
+	
+	SetDuration = function(self, duration) -- animation:SetDuration(seconds) --> Set the duration of the animation
+		self.Duration = duration or 0
+	end,
+	
+	GetDuration = function(self) -- animation:GetDuration() --> Get the duration of the animation in seconds
+		return self.Duration
+	end,
+	
+	GetProgressByTimer = function(self) -- animation:GetProgressByTimer() --> Get the progress of the animation in seconds
+		return self.Timer
+	end,
+	
+	SetOrder = function(self, order) -- animation:SetOrder(num) --> Set the play order of the animation, if it belongs to a group
+		if (not self.Group) then
+			return
+		end
+		
+		self.Order = order or 1
+		
+		if (order > self.Group.MaxOrder) then
+			self.Group.MaxOrder = order
+		end
+	end,
+	
+	GetOrder = function(self) -- animation:GetOrder() --> Get the play order of the animation
+		return self.Order
+	end,
+	
+	SetParent = function(self, parent) -- animation:SetParent(object) --> Set the object that the animation controls
+		self.Parent = parent
+	end,
+	
+	GetParent = function(self) -- animation:GetParent() --> Get the object that the animation controls
+		return self.Parent
+	end,
+	
+	SetGroup = function(self, group) -- animation:SetGroup(group) --> Add the animation to a group
+		if (not group.Animations) then
+			group.Animations = {}
+		end
+		
+		self.Order = 1
+		self.Group = group
+		
+		group.Animations[#group.Animations + 1] = self
+		
+		return self.Group
+	end,
+	
+	GetGroup = function(self) -- animation:GetGroup() --> Get the animation group
+		return self.Group
+	end,
+	
+	Ungroup = function(self) -- animation:Ungroup() --> Remove the animation from its group
+		if (not self.Group) then
+			return
+		end
+		
+		for i = 1, #self.Group.Animations do
+			if (self.Group.Animations[i] == self) then
+				tremove(self.Group, i)
+			end
+		end
+	end,
+	
+	SetScript = function(self, handler, func) -- animation:SetScript(handler, func) --> Set a callback to be fired on an event
+		handler = handler:lower()
+		
+		if Callbacks[handler] then
+			Callbacks[handler][self] = func
+		end
+	end,
+	
+	GetScript = function(self, handler) -- animation:GetScript(handler) --> Get the callback to be fired on an event
+		handler = handler:lower()
+		
+		if (Callbacks[handler] and Callbacks[handler][self]) then
+			return Callbacks[handler][self]
+		end
+	end,
+	
+	Callback = function(self, handler) -- animation:Callback(handler) --> Fire a callback on an event
+		handler = handler:lower()
+		
+		if (Callbacks[handler] and Callbacks[handler][self]) then
+			Callbacks[handler][self](self)
+		end
+	end,
+	
+	StartUpdating = function(self) -- animation:StartUpdating() --> Start updating the animation. This is called by :Play()
+		Updater[#Updater + 1] = self
+		
+		if (not Updater:GetScript("OnUpdate")) then
+			Updater:SetScript("OnUpdate", OnUpdate)
+		end
+	end,
+	
+	Update = function(self, elapsed, index) -- animation:Update() --> The update function of the animation. Called while the animation is playing
+		Update[self.Type](self, elapsed, index)
+	end,
+}
+
+local AnimMethods = {
 	move = {
 		SetOffset = function(self, x, y) -- animation:SetOffset(x, y) --> Set the x and y offset of a movement animation
 			self.XSetting = x or 0
@@ -748,8 +749,6 @@ local GroupMethods = {
 	end,
 	
 	Update = function(self, elapsed, index)
-		--Update[self.Type](self, elapsed, index)
-		
 		for i = 1, #self.Animations do
 			self.Animations[i]:Update(elapsed, index)
 		end
@@ -771,9 +770,8 @@ function LibAnim:CreateAnimation(parent, animtype) -- LibAnim:CreateAnimation(ob
 		return
 	end
 	
-	local Animation = setmetatable(AnimMethods.All, {__index = setmetatable(AnimMethods[animtype:lower()], Index)})
+	local Animation = setmetatable(Prototype, {__index = setmetatable(AnimMethods[animtype:lower()], Index)})
 	
-	-- Set some attributes and defaults
 	Animation.Type = animtype:lower()
 	Animation.Parent = parent
 	
