@@ -46,14 +46,7 @@ local Initialize = {}
 local Update = {}
 local Easing = {}
 local Callbacks = {} -- OnPlay, OnPause, OnResume, OnStop, OnReset, OnFinished, OnLoop
-
-local Index = {
-	__index = function(t, k)
-		if rawget(t, k) then
-			return rawget(t, k)
-		end
-	end
-}
+local Index = {}
 
 local OnUpdate = function(self, elapsed)
 	for i = 1, #self do
@@ -105,9 +98,10 @@ local Prototype = {
 				self:Callback("OnPlay")
 			end
 		else
-			self:StartUpdating()
 			self:Callback("OnResume")
 		end
+		
+		self:StartUpdating()
 		
 		self.Playing = true
 		self.Paused = false
@@ -186,9 +180,9 @@ local Prototype = {
 	end,
 	
 	SetOrder = function(self, order) -- animation:SetOrder(num) --> Set the play order of the animation, if it belongs to a group
-		if (not self.Group) then
+		--[[if (not self.Group) then
 			return
-		end
+		end]]
 		
 		self.Order = order or 1
 		
@@ -209,33 +203,33 @@ local Prototype = {
 		return self.Parent
 	end,
 	
-	SetGroup = function(self, group) -- animation:SetGroup(group) --> Add the animation to a group
-		if (not group.Animations) then
-			group.Animations = {}
+	SetGroup = function(self, group) -- animation:SetGroup(group) --> Add the animation to a group, or remove it from its current group
+		if group then
+			if (not group.Animations) then
+				group.Animations = {}
+			end
+			
+			self.Order = 1
+			self.Group = group
+			
+			tinsert(group.Animations, self)
+			
+			--group.Animations[#group.Animations + 1] = self
+			
+			return self.Group
+		elseif self.Group then
+			for i = 1, #self.Group.Animations do
+				if (self.Group.Animations[i] == self) then
+					tremove(self.Group, i)
+				end
+			end
+			
+			self.Group = nil
 		end
-		
-		self.Order = 1
-		self.Group = group
-		
-		group.Animations[#group.Animations + 1] = self
-		
-		return self.Group
 	end,
 	
 	GetGroup = function(self) -- animation:GetGroup() --> Get the animation group
 		return self.Group
-	end,
-	
-	Ungroup = function(self) -- animation:Ungroup() --> Remove the animation from its group
-		if (not self.Group) then
-			return
-		end
-		
-		for i = 1, #self.Group.Animations do
-			if (self.Group.Animations[i] == self) then
-				tremove(self.Group, i)
-			end
-		end
 	end,
 	
 	SetScript = function(self, handler, func) -- animation:SetScript(handler, func) --> Set a callback to be fired on an event
@@ -258,7 +252,7 @@ local Prototype = {
 		handler = handler:lower()
 		
 		if (Callbacks[handler] and Callbacks[handler][self]) then
-			Callbacks[handler][self](self)
+			Callbacks[handler][self](self, handler)
 		end
 	end,
 	
@@ -595,6 +589,7 @@ local GroupMethods = {
 	
 	Play = function(self)
 		for i = 1, #self.Animations do
+			--print(i)
 			if (self.Animations[i].Order == self.Order) then
 				self.Animations[i]:Play()
 			end
@@ -603,6 +598,8 @@ local GroupMethods = {
 		self.Playing = true
 		self.Paused = false
 		self.Stopped = false
+		
+		--self:CheckOrder()
 		
 		self:Callback("OnPlay")
 	end,
@@ -692,7 +689,7 @@ local GroupMethods = {
 		if (not self.Animations) then
 			return
 		end
-	
+		
 		-- Check if we're done all animations at the current order, then proceed to the next order.
 		local NumAtOrder = 0
 		local NumDoneAtOrder = 0
@@ -728,29 +725,12 @@ local GroupMethods = {
 			
 			-- Play!
 			for i = 1, #self.Animations do
-				if (self.Animations[i].Order == self.Order) then
+				print(i, self.Animations[i].AnimType)
+			--	if (self.Animations[i].Order == self.Order) then
 					self.Animations[i]:Play()
-				end
+					print(format("playing %s", i))
+			--	end
 			end
-		end
-	end,
-	
-	--[[
-		These need reworking. I want animations to be independant objects now, that can be grouped if desired and run off the group rather than individually.
-		Previously groups were needed to run animations. I've gotten rid of that, but now I need to make sure that my existing functions accomodate this change.
-	--]]
-	
-	StartUpdating = function(self)
-		Updater[#Updater + 1] = self
-		
-		if (not Updater:GetScript("OnUpdate")) then
-			Updater:SetScript("OnUpdate", OnUpdate)
-		end
-	end,
-	
-	Update = function(self, elapsed, index)
-		for i = 1, #self.Animations do
-			self.Animations[i]:Update(elapsed, index)
 		end
 	end,
 }
@@ -770,7 +750,7 @@ function LibAnim:CreateAnimation(parent, animtype) -- LibAnim:CreateAnimation(ob
 		return
 	end
 	
-	local Animation = setmetatable(Prototype, {__index = setmetatable(AnimMethods[animtype:lower()], Index)})
+	local Animation = setmetatable(AnimMethods[animtype:lower()], {__index = Prototype})
 	
 	Animation.Type = animtype:lower()
 	Animation.Parent = parent
