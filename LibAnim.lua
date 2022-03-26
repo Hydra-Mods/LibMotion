@@ -589,7 +589,6 @@ local GroupMethods = {
 	
 	Play = function(self)
 		for i = 1, #self.Animations do
-			--print(i)
 			if (self.Animations[i].Order == self.Order) then
 				self.Animations[i]:Play()
 			end
@@ -725,11 +724,9 @@ local GroupMethods = {
 			
 			-- Play!
 			for i = 1, #self.Animations do
-				print(i, self.Animations[i].AnimType)
-			--	if (self.Animations[i].Order == self.Order) then
-					self.Animations[i]:Play()
-					print(format("playing %s", i))
-			--	end
+				if (self.Animations[i].Order == self.Order) then
+						self.Animations[i]:Play()
+				end
 			end
 		end
 	end,
