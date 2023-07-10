@@ -17,7 +17,7 @@ LibMotion is a powerful animation library for Lua, providing developers with an 
 local animation = LibMotion:CreateAnimation(parent, animType)
 ```
 
-## Animation Types
+### Animation Types
 LibMotion supports various animation types, including:
 
 - **move**: Movement animation for changing object position.
@@ -73,3 +73,38 @@ local animationGroup = LibMotion:CreateAnimationGroup(parent)
 - **animationGroup:GetParent()**: Get the object that the animation group controls.
 - **animationGroup:SetScript(event, func)**: Set a callback to be fired on an event.
 - **animationGroup:GetScript(event)**: Get the callback to be fired on an event.
+
+## Easing Types
+- **linear**
+- **inquadratic**
+- **outquadratic**
+- **inoutquadratic**
+- **incubic**
+- **outcubic**
+- **inoutcubic**
+- **inquartic**
+- **outquartic**
+- **inoutquartic**
+- **inquintic**
+- **outquintic**
+- **inoutquintic**
+- **insinusoidal**
+- **outsinusoidal**
+- **inoutsinusoidal**
+- **inexponential**
+- **outexponential**
+- **inoutexponential**
+- **incircular**
+- **outcircular**
+- **inoutcircular**
+- **outbounce**
+- **inbounce**
+- **inoutbounce**
+- **inelastic**
+- **outelastic**
+- **inoutelastic**
+- **in** (alias for inquadratic)
+- **out** (alias for outquadratic)
+- **inout** (alias for inoutquadratic)
+
+These easing types can be used with the SetEasing() method to customize the animation's movement.
