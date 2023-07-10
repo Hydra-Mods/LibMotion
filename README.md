@@ -1,6 +1,6 @@
 # LibMotion
 
-LibMotion is a powerful animation library for Lua, providing developers with an easy-to-use API to create dynamic animations and transitions in Lua projects.
+LibMotion is a powerful animation library, providing an easy-to-use API to create dynamic animations and transitions.
 
 ## Features
 
