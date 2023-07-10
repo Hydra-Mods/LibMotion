@@ -12,11 +12,28 @@ LibMotion is a powerful animation library for Lua, providing developers with an 
 
 ### Usage
 
-To create an animation:
+### Creating an Animation
 ```lua
 local animation = LibMotion:CreateAnimation(parent, animType)
 ```
-To create an animation group:
+
+### Animation Types
+LibMotion supports various animation types, including:
+
+- **move**: Movement animation for changing object position.
+- **fade**: Fade animation for adjusting object opacity.
+- **height**: Height animation for resizing objects vertically.
+- **width**: Width animation for resizing objects horizontally.
+- **color**: Color animation for changing object colors.
+- **progress**: Progress animation for controlling progress bars.
+- **sleep**: Animation for adding delays in animation sequences.
+- **number**: Number animation for animating numerical values.
+- **scale**: Scale animation for scaling objects.
+- **path**: Path animation for animating objects along a predefined path.
+- **gif**: GIF animation for creating animated textures.
+- **typewriter**: Typewriter animation for simulating typing effect.
+
+### Creating an Animation Group
 ```lua
 local animationGroup = LibMotion:CreateAnimationGroup(parent)
 ```
