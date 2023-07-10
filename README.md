@@ -17,7 +17,7 @@ LibMotion is a powerful animation library for Lua, providing developers with an 
 local animation = LibMotion:CreateAnimation(parent, animType)
 ```
 
-### Animation Types
+## Animation Types
 LibMotion supports various animation types, including:
 
 - **move**: Movement animation for changing object position.
