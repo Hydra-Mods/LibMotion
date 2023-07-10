@@ -37,3 +37,39 @@ LibMotion supports various animation types, including:
 ```lua
 local animationGroup = LibMotion:CreateAnimationGroup(parent)
 ```
+
+## Animation Controls
+- **animation:Play()**: Play the animation.
+- **animation:IsPlaying()**: Check if the animation is currently playing.
+- **animation:Pause()**: Pause the animation.
+- **animation:IsPaused()**: Check if the animation is currently paused.
+- **animation:Stop(reset)**: Stop the animation. Pass reset as true to reset the animation to its pre-played state.
+- **animation:IsStopped()**: Check if the animation is currently stopped.
+- **animation:SetEasing(easing)**: Set the easing type used by the animation.
+- **animation:GetEasing()**: Get the easing type used by the animation.
+- **animation:SetDuration(duration)**: Set the duration of the animation.
+- **animation:GetDuration()**: Get the duration of the animation in seconds.
+- **animation:SetProgress(progress)**: Set the progress of the animation from 0 to 1.
+- **animation:GetProgress()**: Get the progress of the animation from 0 to 1.
+- **animation:SetOrder(order)**: Set the play order of the animation if it belongs to a group.
+- **animation:GetOrder()**: Get the play order of the animation.
+- **animation:SetParent(parent)**: Set the object that the animation controls.
+- **animation:GetParent()**: Get the object that the animation controls.
+- **animation:SetGroup(group)**: Add the animation to a group or remove it from its current group.
+- **animation:GetGroup()**: Get the animation group.
+- **animation:SetScript(event, func)**: Set a callback to be fired on an event.
+- **animation:GetScript(event)**: Get the callback to be fired on an event.
+
+## Group Methods
+- **animationGroup:Play()**: Play the animation group.
+- **animationGroup:IsPlaying()**: Check if the animation group is currently playing.
+- **animationGroup:Pause()**: Pause the animation group.
+- **animationGroup:IsPaused()**: Check if the animation group is currently paused.
+- **animationGroup:Stop()**: Stop the animation group.
+- **animationGroup:IsStopped()**: Check if the animation group is currently stopped.
+- **animationGroup:SetLooping(loop)**: Set whether the animation group should loop.
+- **animationGroup:GetLooping()**: Get whether the animation group should loop.
+- **animationGroup:SetParent(parent)**: Set the object that the animation group controls.
+- **animationGroup:GetParent()**: Get the object that the animation group controls.
+- **animationGroup:SetScript(event, func)**: Set a callback to be fired on an event.
+- **animationGroup:GetScript(event)**: Get the callback to be fired on an event.
