@@ -25,6 +25,24 @@ local Initialize = {}
 local Update = {}
 local Easing = {}
 
+local Set = {
+	backdrop = Updater.SetBackdropColor,
+	border = Updater.SetBackdropBorderColor,
+	statusbar = Updater.SetStatusBarColor,
+	text = FontString.SetTextColor,
+	texture = Texture.SetTexture,
+	vertex = Texture.SetVertexColor,
+}
+
+local Get = {
+	backdrop = Updater.GetBackdropColor,
+	border = Updater.GetBackdropBorderColor,
+	statusbar = Updater.GetStatusBarColor,
+	text = FontString.GetTextColor,
+	texture = Texture.GetVertexColor,
+	vertex = Texture.GetVertexColor,
+}
+
 local OnUpdate = function(self, elapsed)
 	for i = 1, #self do
 		if self[i] then
@@ -189,7 +207,7 @@ local Prototype = {
 			self.Events = {}
 		end
 
-		self.Events[event]= func
+		self.Events[event] = func
 	end,
 
 	GetScript = function(self, event) -- animation:GetScript(handler) --> Get the callback to be fired on an event
@@ -637,15 +655,15 @@ local AnimMethods = {
 
 -- Library functions
 
-function LibMotion:CreateAnimationGroup() -- LibMotion:CreateAnimationGroup() --> Create an animation group to control individual animations
+function LibMotion:CreateAnimationGroup() -- LibMotion:CreateAnimationGroup() --> Create a group to control multiple animations
 	return setmetatable({}, {__index = GroupPrototype})
 end
 
-function LibMotion:CreateAnimation(parent, animtype)
+function LibMotion:CreateAnimation(parent, animtype) -- LibMotion:CreateAnimation(parent, type) --> Create an animation object
 	local Type = animtype:lower()
 	local Methods = AnimMethods[Type]
 
-	if not Methods then
+	if (not Methods) then
 		return
 	end
 
@@ -1105,24 +1123,6 @@ local InterpolateRGB = function(p, r1, g1, b1, r2, g2, b2)
 	return r1 + (r2 - r1) * p, g1 + (g2 - g1) * p, b1 + (b2 - b1) * p
 end
 
-local Set = {
-	backdrop = Updater.SetBackdropColor,
-	border = Updater.SetBackdropBorderColor,
-	statusbar = Updater.SetStatusBarColor,
-	text = FontString.SetTextColor,
-	texture = Texture.SetTexture,
-	vertex = Texture.SetVertexColor,
-}
-
-local Get = {
-	backdrop = Updater.GetBackdropColor,
-	border = Updater.GetBackdropBorderColor,
-	statusbar = Updater.GetStatusBarColor,
-	text = FontString.GetTextColor,
-	texture = Texture.GetVertexColor,
-	vertex = Texture.GetVertexColor,
-}
-
 Initialize.color = function(self)
 	self.Progress = 0
 	self.ColorType = self.ColorType or "backdrop"
@@ -1259,7 +1259,7 @@ Update.scale = function(self, elapsed, i)
 			self.Group:CheckOrder()
 		end
 	else
-		self.Parent:SetScale(Easing[self.Easing](self.Progress, self.StartScale, self.ScaleChange, self.Duration))
+		self.Parent:SetScale(Easing[self.Easing](self.Progress, self.StartScale, self.ScaleChange, 1))
 	end
 end
 
