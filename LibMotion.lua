@@ -51,10 +51,10 @@ local Prototype = {
 		if (not self.Paused) then
 			if Initialize[self.Type] then
 				Initialize[self.Type](self)
-				self:FireEvent("OnPlay", self.Type)
+				self:FireEvent("OnPlay")
 			end
 		else
-			self:FireEvent("OnResume", self.Type)
+			self:FireEvent("OnResume")
 		end
 
 		self:StartUpdating()
@@ -298,14 +298,6 @@ local GroupPrototype = {
 		return self.Looping
 	end,
 
-	SetParent = function(self, parent)
-		self.Parent = parent
-	end,
-
-	GetParent = function(self)
-		return self.Parent
-	end,
-
 	SetScript = function(self, event, func)
 		event = event:lower()
 
@@ -313,7 +305,7 @@ local GroupPrototype = {
 			self.Events = {}
 		end
 
-		self.Events[event]= func
+		self.Events[event] = func
 	end,
 
 	GetScript = function(self, event)
@@ -645,22 +637,31 @@ local AnimMethods = {
 
 -- Library functions
 
-function LibMotion:CreateAnimationGroup(parent) -- LibMotion:CreateAnimationGroup(object) --> Create an animation group to control individual animations
-	local Group = setmetatable({}, {__index = GroupPrototype})
-	--local Group = setmetatable({}, {__index = setmetatable({}, {__index = GroupPrototype})})
-
-	Group.Parent = parent
-
-	return Group
+function LibMotion:CreateAnimationGroup() -- LibMotion:CreateAnimationGroup() --> Create an animation group to control individual animations
+	return setmetatable({}, {__index = GroupPrototype})
 end
 
-function LibMotion:CreateAnimation(parent, animtype) -- LibMotion:CreateAnimation(object, type) --> Create an animation
-	if (not AnimMethods[animtype:lower()]) then
+function LibMotion:CreateAnimation(parent, animtype)
+	local Type = animtype:lower()
+	local Methods = AnimMethods[Type]
+
+	if not Methods then
 		return
 	end
 
-	local Animation = setmetatable(AnimMethods[animtype:lower()], {__index = Prototype})
-	Animation.Type = animtype:lower()
+	local Animation = setmetatable({}, {
+		__index = function(self, key)
+			local Method = Methods[key]
+
+			if Method then
+				return Method
+			end
+
+			return Prototype[key]
+		end
+	})
+
+	Animation.Type = Type
 	Animation.Parent = parent
 
 	return Animation
