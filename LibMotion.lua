@@ -1114,7 +1114,7 @@ Update.width = function(self, elapsed, i)
 			self.Group:CheckOrder()
 		end
 	else
-		self.Parent:SetWidth(Easing[self.Easing](self.Progress, self.StartWidth, self.WidthChange, self.Duration))
+		self.Parent:SetWidth(Easing[self.Easing](self.Progress, self.StartWidth, self.WidthChange, 1))
 	end
 end
 
@@ -1174,7 +1174,7 @@ Update.progress = function(self, elapsed, i)
 			self.Group:CheckOrder()
 		end
 	else
-		self.Parent:SetValue(Easing[self.Easing](self.Progress, self.StartValue, self.ProgressChange, self.Duration))
+		self.Parent:SetValue(Easing[self.Easing](self.Progress, self.StartValue, self.ProgressChange, 1))
 	end
 end
 
@@ -1228,7 +1228,7 @@ Update.number = function(self, elapsed, i)
 			self.Group:CheckOrder()
 		end
 	else
-		self.Parent:SetText(format("%s%d%s", self.Prefix, floor(Easing[self.Easing](self.Progress, self.StartNumber, self.NumberChange, self.Duration)), self.Postfix))
+		self.Parent:SetText(format("%s%d%s", self.Prefix, floor(Easing[self.Easing](self.Progress, self.StartNumber, self.NumberChange, 1)), self.Postfix))
 	end
 end
 
@@ -1264,18 +1264,7 @@ Update.scale = function(self, elapsed, i)
 end
 
 -- Path
-local CubicSpline = function (t, p0, p1, p2, p3)
-    local t2 = t * t
-    local t3 = t2 * t
-    local a = 2 * p1
-    local b = p2 - p0
-    local c = 2 * p0 - 5 * p1 + 4 * p2 - p3
-    local d = -p0 + 3 * p1 - 3 * p2 + p3
-
-    return 0.5 * (a + (b * t) + (c * t2) + (d * t3))
-end
-
-local GenerateSmoothPath = function(path)
+local GenerateSmoothPath = function(path) -- Cubic spline interpolation for buttery paths
     local SmoothPath = {}
 
     for i = 1, #path - 1 do
@@ -1284,9 +1273,16 @@ local GenerateSmoothPath = function(path)
         local P2 = path[i + 1]
         local P3 = path[i + 2] or P2
 
-        for t = 0, 1, 0.1 do -- A lower step will generate more points, 0.05 for example is very smoothed
-            local X = CubicSpline(t, P0[1], P1[1], P2[1], P3[1])
-            local Y = CubicSpline(t, P0[2], P1[2], P2[2], P3[2])
+        for t = 0, 1, 0.1 do -- Lowering 0.1 will increase how many points are generated
+            local t2 = t * t
+            local t3 = t2 * t
+            local factor1 = 2 * P1
+            local factor2 = P2 - P0
+            local factor3 = 2 * P0 - 5 * P1 + 4 * P2 - P3
+            local factor4 = -P0 + 3 * P1 - 3 * P2 + P3
+
+            local X = 0.5 * (factor1 + (factor2 * t) + (factor3 * t2) + (factor4 * t3))
+            local Y = 0.5 * (factor1 + (factor2 * t) + (factor3 * t2) + (factor4 * t3))
 
             tinsert(SmoothPath, {X, Y})
         end
@@ -1337,7 +1333,7 @@ Update.path = function(self, elapsed, i)
             self.Group:CheckOrder()
         end
     else
-        local CurrPathLength = self.PathLength * self.Progress
+        local CurrPathLength = self.PathLength * Easing[self.Easing](self.Progress, 0, 1, 1)
         local SegmentIndex = floor(CurrPathLength) + 1
         local SegmentTime = CurrPathLength - floor(CurrPathLength)
 
@@ -1413,10 +1409,10 @@ Update.typewriter = function(self, elapsed, i)
             self.Group:CheckOrder()
         end
     else
-        local CharactersToShow = floor(Easing[self.Easing](self.Progress, 0, 1, 1) * self.Length) - self.Index
+        local CharToShow = floor(Easing[self.Easing](self.Progress, 0, 1, 1) * self.Length) - self.Index
 
-        if CharactersToShow > 0 then
-            self.Index = self.Index + CharactersToShow
+        if (CharToShow > 0) then
+            self.Index = self.Index + CharToShow
             self.Parent:SetText(self.Text:sub(1, self.Index))
         end
     end
