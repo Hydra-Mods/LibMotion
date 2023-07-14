@@ -952,7 +952,7 @@ Easing.inout = Easing.inoutquadratic
 
 -- Movement
 Initialize.move = function(self)
-	if self.Playing then
+	if self:IsPlaying() then
 		return
 	end
 
@@ -1014,7 +1014,7 @@ end
 
 -- Fade
 Initialize.fade = function(self)
-	if self.Playing then
+	if self:IsPlaying() then
 		return
 	end
 
@@ -1052,7 +1052,7 @@ end
 
 -- Height
 Initialize.height = function(self)
-	if self.Playing then
+	if self:IsPlaying() then
 		return
 	end
 
@@ -1090,7 +1090,7 @@ end
 
 -- Width
 Initialize.width = function(self)
-	if self.Playing then
+	if self:IsPlaying() then
 		return
 	end
 
@@ -1132,6 +1132,10 @@ local InterpolateRGB = function(p, r1, g1, b1, r2, g2, b2)
 end
 
 Initialize.color = function(self)
+	if self:IsPlaying() then
+		return
+	end
+
 	self.Progress = 0
 	self.ColorType = self.ColorType or "backdrop"
 	self.StartR, self.StartG, self.StartB = Get[self.ColorType](self.Parent)
@@ -1168,6 +1172,10 @@ end
 
 -- Progress
 Initialize.progress = function(self)
+	if self:IsPlaying() then
+		return
+	end
+
 	self.Progress = 0
 	self.StartValue = self.Parent:GetValue() or 0
 	self.EndValue = self.EndValueSetting or 0
@@ -1230,6 +1238,10 @@ end
 
 -- Number
 Initialize.number = function(self)
+	if self:IsPlaying() then
+		return
+	end
+
 	self.Progress = 0
 
 	if (not self.StartNumber) then
@@ -1270,7 +1282,7 @@ end
 
 -- Scale
 Initialize.scale = function(self)
-	if self.Playing then
+	if self:IsPlaying() then
 		return
 	end
 
@@ -1335,9 +1347,9 @@ local GenerateSmoothPath = function(path) -- Cubic spline interpolation for butt
 end
 
 Initialize.path = function(self)
-    if self.Playing then
-        return
-    end
+	if self:IsPlaying() then
+		return
+	end
 
     local A1, P, A2, X, Y = self.Parent:GetPoint()
 
@@ -1399,9 +1411,9 @@ end
 
 -- GIF
 Initialize.gif = function(self)
-    if self.Playing then
-        return
-    end
+	if self:IsPlaying() then
+		return
+	end
 
     self.Progress = 0
     self.FrameDuration = self.FrameDurationSetting or 0.1
@@ -1430,8 +1442,7 @@ Update.gif = function(self, elapsed)
 			end
 		end
     else
-        local Index = floor(self.Progress * self.TotalFrames) + 1
-        local Texture = self.TextureFrames[Index]
+        local Texture = self.TextureFrames[floor(self.Progress * self.TotalFrames) + 1]
 
         if Texture then
             self.Parent:SetTexture(Texture)
@@ -1441,9 +1452,9 @@ end
 
 -- Typewriter
 Initialize.typewriter = function(self)
-    if self.Playing then
-        return
-    end
+	if self:IsPlaying() then
+		return
+	end
 
     self.Progress = 0
     self.Text = self.Parent:GetText() or ""
