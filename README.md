@@ -35,7 +35,7 @@ LibMotion supports various animation types, including:
 
 ### Creating an Animation Group
 ```lua
-local animationGroup = LibMotion:CreateAnimationGroup(parent)
+local animationGroup = LibMotion:CreateAnimationGroup()
 ```
 
 ## Animation Controls
