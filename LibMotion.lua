@@ -38,7 +38,7 @@ local OnUpdate = function(self, elapsed)
 end
 
 local Prototype = {
-	Play = function(self) -- animation:Play() --> Play the animation
+	Play = function(self)
 		if self.Paused then
 			self:FireEvent("OnResume")
 		elseif Initialize[self.Type] then
@@ -58,11 +58,11 @@ local Prototype = {
 		end
 	end,
 
-	IsPlaying = function(self) -- animation:IsPlaying() --> Return playing state of the animation
+	IsPlaying = function(self)
 		return self.Playing
 	end,
 
-	Pause = function(self) -- animation:Pause() --> Pause the animation
+	Pause = function(self)
 		for i = 1, #Updater do
 			if (Updater[i] == self) then
 				tremove(Updater, i)
@@ -78,11 +78,11 @@ local Prototype = {
 		self:FireEvent("OnPause")
 	end,
 
-	IsPaused = function(self) -- animation:IsPaused() --> Return paused state of the animation
+	IsPaused = function(self)
 		return self.Paused
 	end,
 
-	Stop = function(self, reset) -- animation:Stop(reset) --> Stop the animation. Optional argument resets the animation to its pre-played state
+	Stop = function(self, reset)
 		for i = 1, #Updater do
 			if (Updater[i] == self) then
 				tremove(Updater, i)
@@ -105,33 +105,33 @@ local Prototype = {
 		end
 	end,
 
-	IsStopped = function(self) -- animation:IsStopped() --> Return stopped state of the animation
+	IsStopped = function(self)
 		return self.Stopped
 	end,
 
-	SetEasing = function(self, easing) -- animation:SetEasing(easing) --> Set the easing type used by the animation
+	SetEasing = function(self, easing)
 		easing = easing:lower()
 
 		self.Easing = Easing[easing] and easing or "linear"
 	end,
 
-	GetEasing = function(self) -- animation:GetEasing() --> Get the easing type used by the animation
+	GetEasing = function(self)
 		return self.Easing
 	end,
 
-	SetDuration = function(self, duration) -- animation:SetDuration(seconds) --> Set the duration of the animation
+	SetDuration = function(self, duration)
 		self.Duration = duration or 0
 	end,
 
-	GetDuration = function(self) -- animation:GetDuration() --> Get the duration of the animation in seconds
+	GetDuration = function(self)
 		return self.Duration
 	end,
 
-	SetProgress = function(self, progress) -- animation:SetProgress(0-1) --> Set the progress of the animation from 0 to 1
+	SetProgress = function(self, progress)
 		self.Progress = progress
 	end,
 
-	GetProgress = function(self) -- animation:GetProgress() --> Get the progress of the animation from 0 to 1
+	GetProgress = function(self)
 		return self.Progress
 	end,
 
@@ -151,7 +151,7 @@ local Prototype = {
 		return self.EndDelaySetting
 	end,
 
-	SetOrder = function(self, order) -- animation:SetOrder(num) --> Set the play order of the animation, if it belongs to a group
+	SetOrder = function(self, order)
 		self.Order = order or 1
 
 		if (self.Group and order > self.Group.MaxOrder) then
@@ -159,19 +159,19 @@ local Prototype = {
 		end
 	end,
 
-	GetOrder = function(self) -- animation:GetOrder() --> Get the play order of the animation
+	GetOrder = function(self)
 		return self.Order
 	end,
 
-	SetParent = function(self, parent) -- animation:SetParent(object) --> Set the object that the animation controls
+	SetParent = function(self, parent)
 		self.Parent = parent
 	end,
 
-	GetParent = function(self) -- animation:GetParent() --> Get the object that the animation controls
+	GetParent = function(self)
 		return self.Parent
 	end,
 
-	SetGroup = function(self, group) -- animation:SetGroup(group) --> Add the animation to a group, or remove it from its current group
+	SetGroup = function(self, group)
 		if group then
 			self.Order = 1
 			self.Group = group
@@ -190,11 +190,11 @@ local Prototype = {
 		end
 	end,
 
-	GetGroup = function(self) -- animation:GetGroup() --> Get the animation group
+	GetGroup = function(self)
 		return self.Group
 	end,
 
-	SetScript = function(self, event, func) -- animation:SetScript(event, func) --> Set a callback to be fired on an event
+	SetScript = function(self, event, func)
 		event = event:lower()
 
 		if (not self.Events) then
@@ -204,7 +204,7 @@ local Prototype = {
 		self.Events[event] = func
 	end,
 
-	GetScript = function(self, event) -- animation:GetScript(handler) --> Get the callback to be fired on an event
+	GetScript = function(self, event)
 		if (not self.Events) then
 			return
 		end
@@ -379,30 +379,30 @@ local GroupPrototype = {
 
 local AnimMethods = {
 	move = {
-		SetOffset = function(self, x, y) -- animation:SetOffset(x, y) --> Set the x and y offset of a movement animation
+		SetOffset = function(self, x, y)
 			self.XSetting = x or 0
 			self.YSetting = y or 0
 		end,
 
-		GetOffset = function(self) -- animation:GetOffset() --> Get the x and y offset of a movement animation
+		GetOffset = function(self)
 			return self.XSetting, self.YSetting
 		end,
 
-		SetSmoothPath = function(self, smooth) -- animation:SetSmoothPath() --> Set a movement animation to use a smooth path rather than linear
+		SetSmoothPath = function(self, smooth)
 			self.SmoothPathSetting = smooth
 		end,
 
-		GetSmoothPath = function(self) -- animation:GetSmoothPath() --> Get whether a movement animation will use a smooth path rather than linear
+		GetSmoothPath = function(self)
 			return self.SmoothPathSetting
 		end,
 
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
+		Reset = function(self)
 			self.Progress = 0
 			self.Parent:ClearAllPoints()
 			self.Parent:SetPoint(self.A1, self.P, self.A2, self.StartX, self.StartY)
 		end,
 
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
+		Finish = function(self)
 			self:Stop()
 
 			self.Parent:ClearAllPoints()
@@ -411,175 +411,175 @@ local AnimMethods = {
 	},
 
 	fade = {
-		SetChange = function(self, alpha) -- animation:SetChange(alpha) --> Set the alpha change of a fade animation
+		SetChange = function(self, alpha)
 			self.EndAlphaSetting = alpha or 0
 		end,
 
-		GetChange = function(self) -- animation:GetChange() --> Get the alpha change of a fade animation
+		GetChange = function(self)
 			return self.EndAlphaSetting
 		end,
 
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
+		Reset = function(self)
 			self.Progress = 0
 			self.Parent:SetAlpha(self.StartAlpha)
 		end,
 
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
+		Finish = function(self)
 			self:Stop()
 			self.Parent:SetAlpha(self.EndAlpha)
 		end,
 	},
 
 	height = {
-		SetChange = function(self, height) -- animation:SetChange(height) --> Set the change of a height animation
+		SetChange = function(self, height)
 			self.EndHeightSetting = height or 0
 		end,
 
-		GetChange = function(self) -- animation:GetChange() --> Get the change of a height animation
+		GetChange = function(self)
 			return self.EndHeightSetting
 		end,
 
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
+		Reset = function(self)
 			self.Progress = 0
 			self.Parent:SetHeight(self.StartHeight)
 		end,
 
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
+		Finish = function(self)
 			self:Stop()
 			self.Parent:SetHeight(self.EndHeight)
 		end,
 	},
 
 	width = {
-		SetChange = function(self, width) -- animation:SetChange(width) --> Set the change of a width animation
+		SetChange = function(self, width)
 			self.EndWidthSetting = width or 0
 		end,
 
-		GetChange = function(self) -- animation:GetChange() --> Get the change of a width animation
+		GetChange = function(self)
 			return self.EndWidthSetting
 		end,
 
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
+		Reset = function(self)
 			self.Progress = 0
 			self.Parent:SetWidth(self.StartWidth)
 		end,
 
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
+		Finish = function(self)
 			self:Stop()
 			self.Parent:SetWidth(self.EndWidth)
 		end,
 	},
 
 	color = {
-		SetChange = function(self, r, g, b) -- animation:SetChange(r, g, b) --> Set the rgb change of a color animation
+		SetChange = function(self, r, g, b)
 			self.EndRSetting = r or 1
 			self.EndGSetting = g or 1
 			self.EndBSetting = b or 1
 		end,
 
-		GetChange = function(self) -- animation:GetChange() --> Get the rgb change of a color animation
+		GetChange = function(self)
 			return self.EndRSetting, self.EndGSetting, self.EndBSetting
 		end,
 
-		SetColorType = function(self, region) -- animation:SetColorType() --> Define what a color animation will colorize
+		SetColorType = function(self, region)
 			region = region:lower()
 
 			self.ColorType = ColorSet[region] and region or "border"
 		end,
 
-		GetColorType = function(self) -- animation:GetColorType() --> Get what a color animation will colorize
+		GetColorType = function(self)
 			return self.ColorType
 		end,
 
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
+		Reset = function(self)
 			self.Progress = 0
 			ColorSet[self.ColorType](self.Parent, self.StartR, self.StartG, self.StartB)
 		end,
 
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
+		Finish = function(self)
 			self:Stop()
 			ColorSet[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
 		end,
 	},
 
 	progress = {
-		SetChange = function(self, value) -- animation:SetChange(seconds) --> Set the change of a progress animation
+		SetChange = function(self, value)
 			self.EndValueSetting = value or 0
 		end,
 
-		GetChange = function(self) -- animation:GetChange() --> Get the change of a progress animation
+		GetChange = function(self)
 			return self.EndValueSetting
 		end,
 
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
+		Reset = function(self)
 			self.Progress = 0
 			self.Parent:SetValue(self.StartValue)
 		end,
 
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
+		Finish = function(self)
 			self:Stop()
 			self.Parent:SetValue(self.EndValue)
 		end,
 	},
 
 	number = {
-		SetChange = function(self, value) -- animation:SetChange(num) --> Set the change of a number animation
+		SetChange = function(self, value)
 			self.EndNumberSetting = value or 0
 		end,
 
-		GetChange = function(self) -- animation:GetChange() --> Get the change of a number animation
+		GetChange = function(self)
 			return self.EndNumberSetting
 		end,
 
-		SetStart = function(self, value) -- animation:SetStart(num) --> Set the start value of a number animation
+		SetStart = function(self, value)
 			self.StartNumber = value
 		end,
 
-		GetStart = function(self) -- animation:GetStart() --> Set the start value of a number animation
+		GetStart = function(self)
 			return self.StartNumber
 		end,
 
-		SetPrefix = function(self, text) -- animation:SetPrefix(text) --> Set the prefix text of a number animation
+		SetPrefix = function(self, text)
 			self.Prefix = text or ""
 		end,
 
-		GetPrefix = function(self) -- animation:GetPrefix() --> Get the prefix text of a number animation
+		GetPrefix = function(self)
 			return self.Prefix
 		end,
 
-		SetPostfix = function(self, text) -- animation:SetPostfix() --> Set the postfix text of a number animation
+		SetPostfix = function(self, text)
 			self.Postfix = text or ""
 		end,
 
-		GetPostfix = function(self) -- animation:GetPostfix() --> Get the postfix text of a number animation
+		GetPostfix = function(self)
 			return self.Postfix
 		end,
 
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
+		Reset = function(self)
 			self.Progress = 0
 			self.Parent:SetText(self.StartNumber)
 		end,
 
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
+		Finish = function(self)
 			self:Stop()
 			self.Parent:SetText(self.EndNumber)
 		end,
 	},
 
 	scale = {
-		SetChange = function(self, scale) -- animation:SetChange(scale) --> Set the change of a scale animation
+		SetChange = function(self, scale)
 			self.EndScaleSetting = scale or 0
 		end,
 
-		GetChange = function(self) -- animation:GetChange() --> Get the change of a scale animation
+		GetChange = function(self)
 			return self.EndScaleSetting
 		end,
 
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
+		Reset = function(self)
 			self.Progress = 0
 		end,
 
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
+		Finish = function(self)
 			self:Stop()
 			self.Parent:SetScale(self.EndScale)
 		end,
@@ -589,9 +589,17 @@ local AnimMethods = {
 		SetPath = function(self, path)
 			self.PathSetting = path
 		end,
+		
+		GetPath = function(self)
+			return self.PathSetting
+		end,
 
 		SetSmoothPath = function(self, smooth)
 			self.SmoothPathSetting = smooth
+		end,
+		
+		GetSmoothPath = function(self)
+			return self.SmoothPathSetting
 		end,
 	},
 
@@ -620,7 +628,7 @@ local AnimMethods = {
 
 -- Library functions
 
-function LibMotion:CreateAnimationGroup() -- LibMotion:CreateAnimationGroup() --> Create a group to control multiple animations
+function LibMotion:CreateAnimationGroup()
 	local Group = setmetatable({}, {__index = GroupPrototype})
 
 	Group.Playing = false
@@ -633,7 +641,7 @@ function LibMotion:CreateAnimationGroup() -- LibMotion:CreateAnimationGroup() --
 	return Group
 end
 
-function LibMotion:CreateAnimation(parent, animtype) -- LibMotion:CreateAnimation(parent, type) --> Create an animation object
+function LibMotion:CreateAnimation(parent, animtype)
 	local Type = animtype:lower()
 	local Methods = AnimMethods[Type]
 

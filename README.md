@@ -90,7 +90,7 @@ In addition to these common animation controls, each animation type in LibMotion
 - **animation:SetColorType(region)**: Define what a color animation will colorize.
 - **animation:GetColorType()**: Get what a color animation will colorize.
 
-The **SetColorType** method allows you to specify the region or element that the color animation will affect. You can choose from the following options for the *region* parameter:
+The **SetColorType** method allows you to specify the region or element that the color animation will affect. You can choose from the following options for the **region** parameter:
 
 - **backdrop**: Colorize the backdrop of the parent frame.
 - **border**: Colorize the border of the parent frame.
