@@ -484,7 +484,7 @@ local AnimMethods = {
 		SetColorType = function(self, region) -- animation:SetColorType() --> Define what a color animation will colorize
 			region = region:lower()
 
-			self.ColorType = Set[region] and region or "border"
+			self.ColorType = ColorSet[region] and region or "border"
 		end,
 
 		GetColorType = function(self) -- animation:GetColorType() --> Get what a color animation will colorize
@@ -493,12 +493,12 @@ local AnimMethods = {
 
 		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
 			self.Progress = 0
-			Set[self.ColorType](self.Parent, self.StartR, self.StartG, self.StartB)
+			ColorSet[self.ColorType](self.Parent, self.StartR, self.StartG, self.StartB)
 		end,
 
 		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
 			self:Stop()
-			Set[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
+			ColorSet[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
 		end,
 	},
 
@@ -1193,6 +1193,24 @@ local InterpolateRGB = function(p, r1, g1, b1, r2, g2, b2)
 	return r1 + (r2 - r1) * p, g1 + (g2 - g1) * p, b1 + (b2 - b1) * p
 end
 
+local ColorSet = {
+	backdrop = Updater.SetBackdropColor,
+	border = Updater.SetBackdropBorderColor,
+	statusbar = Updater.SetStatusBarColor,
+	text = FontString.SetTextColor,
+	texture = Texture.SetTexture,
+	vertex = Texture.SetVertexColor,
+}
+
+local ColorGet = {
+	backdrop = Updater.GetBackdropColor,
+	border = Updater.GetBackdropBorderColor,
+	statusbar = Updater.GetStatusBarColor,
+	text = FontString.GetTextColor,
+	texture = Texture.GetVertexColor,
+	vertex = Texture.GetVertexColor,
+}
+
 Initialize.color = function(self)
 	if self:IsPlaying() then
 		return
@@ -1202,7 +1220,7 @@ Initialize.color = function(self)
 	self.StartDelay = self.StartDelaySetting or 0
 	self.EndDelay = self.EndDelaySetting or 0
 	self.ColorType = self.ColorType or "backdrop"
-	self.StartR, self.StartG, self.StartB = Get[self.ColorType](self.Parent)
+	self.StartR, self.StartG, self.StartB = ColorGet[self.ColorType](self.Parent)
 	self.EndR = self.EndRSetting or 1
 	self.EndG = self.EndGSetting or 1
 	self.EndB = self.EndBSetting or 1
@@ -1232,7 +1250,7 @@ Update.color = function(self, elapsed)
 				end
 			end
 
-			Set[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
+			ColorSet[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
 			self.Playing = false
 			self.Finished = true
 			self:FireEvent("OnFinished")
@@ -1242,7 +1260,7 @@ Update.color = function(self, elapsed)
 			end
 		end
 	else
-		Set[self.ColorType](self.Parent, InterpolateRGB(Easing[self.Easing](self.Progress, 0, 1, 1), self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
+		ColorSet[self.ColorType](self.Parent, InterpolateRGB(Easing[self.Easing](self.Progress, 0, 1, 1), self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
 	end
 end
 

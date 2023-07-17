@@ -43,6 +43,8 @@ local animationGroup = LibMotion:CreateAnimationGroup()
 - **animation:IsPaused()**: Check if the animation is currently paused.
 - **animation:Stop(reset)**: Stop the animation. Pass *reset* as *true* to reset the animation to its pre-played state.
 - **animation:IsStopped()**: Check if the animation is currently stopped.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
 - **animation:SetDuration(duration)**: Set the duration of the animation.
 - **animation:GetDuration()**: Get the duration of the animation in seconds.
 - **animation:SetStartDelay(delay)**: Set the delay before the animation starts.
@@ -69,40 +71,37 @@ In addition to these common animation controls, each animation type in LibMotion
 - **animation:GetOffset()**: Get the x and y offset of a movement animation.
 - **animation:SetSmoothPath(smooth)**: Set a movement animation to use a smooth path rather than linear.
 - **animation:GetSmoothPath()**: Get whether a movement animation will use a smooth path rather than linear.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
 
 ## Fade
 - **animation:SetChange(alpha)**: Set the alpha change of a fade animation.
 - **animation:GetChange()**: Get the alpha change of a fade animation.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
 
 ## Height
 - **animation:SetChange(height)**: Set the change of a height animation.
 - **animation:GetChange()**: Get the change of a height animation.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
 
 ## Width
 - **animation:SetChange(width)**: Set the change of a width animation.
 - **animation:GetChange()**: Get the change of a width animation.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
 
 ## Color
 - **animation:SetChange(r, g, b)**: Set the RGB change of a color animation.
 - **animation:GetChange()**: Get the RGB change of a color animation.
 - **animation:SetColorType(region)**: Define what a color animation will colorize.
 - **animation:GetColorType()**: Get what a color animation will colorize.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
+
+The *SetColorType* method allows you to specify the region or element that the color animation will affect. You can choose from the following options for the *region* parameter:
+
+- **backdrop**: Colorize the backdrop of the parent frame.
+- **border**: Colorize the border of the parent frame.
+- **statusbar**: Colorize the status bar of the parent frame.
+- **text**: Colorize the text of the parent fontstring.
+- **texture**: Colorize the texture of the parent texture.
+- **vertex**: Colorize the vertex color of the parent texture.
 
 ## Progress
 - **animation:SetChange(value)**: Set the change of a progress animation.
 - **animation:GetChange()**: Get the change of a progress animation.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
 
 ## Number
 - **animation:SetChange(value)**: Set the change of a number animation.
@@ -113,20 +112,14 @@ In addition to these common animation controls, each animation type in LibMotion
 - **animation:GetPrefix()**: Get the prefix text of a number animation.
 - **animation:SetPostfix(text)**: Set the postfix text of a number animation.
 - **animation:GetPostfix()**: Get the postfix text of a number animation.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
 
 ## Scale
 - **animation:SetChange(scale)**: Set the change of a scale animation.
 - **animation:GetChange()**: Get the change of a scale animation.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
 
 ## Path
 - **animation:SetPath(path)**: Set the path for a path animation.
 - **animation:SetSmoothPath(smooth)**: Set whether a path animation should use a smooth path.
-- **animation:Reset()**: Reset the animation to its pre-played state.
-- **animation:Finish()**: Set the animation to its finished state.
 
 ## GIF
 - **animation:SetFrameDuration(duration)**: Set the frame duration for a GIF animation.
