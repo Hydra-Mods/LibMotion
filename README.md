@@ -119,7 +119,9 @@ The **SetColorType** method allows you to specify the region or element that the
 
 ## Path
 - **animation:SetPath(path)**: Set the path for a path animation.
+- **animation:GetPath()**: Get the path for a path animation.
 - **animation:SetSmoothPath(smooth)**: Set whether a path animation should use a smooth path.
+- **animation:GetSmoothPath()**: Get whether a path animation should use a smooth path.
 
 ## GIF
 - **animation:SetFrameDuration(duration)**: Set the frame duration for a GIF animation.
