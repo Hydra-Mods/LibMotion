@@ -41,7 +41,7 @@ local animationGroup = LibMotion:CreateAnimationGroup()
 - **animation:IsPlaying()**: Check if the animation is currently playing.
 - **animation:Pause()**: Pause the animation.
 - **animation:IsPaused()**: Check if the animation is currently paused.
-- **animation:Stop(reset)**: Stop the animation. Pass `reset` as `true` to reset the animation to its pre-played state.
+- **animation:Stop(reset)**: Stop the animation. Pass *reset* as *true* to reset the animation to its pre-played state.
 - **animation:IsStopped()**: Check if the animation is currently stopped.
 - **animation:SetDuration(duration)**: Set the duration of the animation.
 - **animation:GetDuration()**: Get the duration of the animation in seconds.
@@ -61,6 +61,78 @@ local animationGroup = LibMotion:CreateAnimationGroup()
 - **animation:GetGroup()**: Get the animation group.
 - **animation:SetScript(event, func)**: Set a callback to be fired on an event.
 - **animation:GetScript(event)**: Get the callback to be fired on an event.
+
+In addition to these common animation controls, each animation type in LibMotion provides additional controls specific to that type. Here's an overview of the animation types and their additional controls:
+
+### Move
+- **animation:SetOffset(x, y)**: Set the x and y offset of a movement animation.
+- **animation:GetOffset()**: Get the x and y offset of a movement animation.
+- **animation:SetSmoothPath(smooth)**: Set a movement animation to use a smooth path rather than linear.
+- **animation:GetSmoothPath()**: Get whether a movement animation will use a smooth path rather than linear.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### Fade
+- **animation:SetChange(alpha)**: Set the alpha change of a fade animation.
+- **animation:GetChange()**: Get the alpha change of a fade animation.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### Height
+- **animation:SetChange(height)**: Set the change of a height animation.
+- **animation:GetChange()**: Get the change of a height animation.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### Width
+- **animation:SetChange(width)**: Set the change of a width animation.
+- **animation:GetChange()**: Get the change of a width animation.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### Color
+- **animation:SetChange(r, g, b)**: Set the RGB change of a color animation.
+- **animation:GetChange()**: Get the RGB change of a color animation.
+- **animation:SetColorType(region)**: Define what a color animation will colorize.
+- **animation:GetColorType()**: Get what a color animation will colorize.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### Progress
+- **animation:SetChange(value)**: Set the change of a progress animation.
+- **animation:GetChange()**: Get the change of a progress animation.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### Number
+- **animation:SetChange(value)**: Set the change of a number animation.
+- **animation:GetChange()**: Get the change of a number animation.
+- **animation:SetStart(value)**: Set the start value of a number animation.
+- **animation:GetStart()**: Get the start value of a number animation.
+- **animation:SetPrefix(text)**: Set the prefix text of a number animation.
+- **animation:GetPrefix()**: Get the prefix text of a number animation.
+- **animation:SetPostfix(text)**: Set the postfix text of a number animation.
+- **animation:GetPostfix()**: Get the postfix text of a number animation.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### Scale
+- **animation:SetChange(scale)**: Set the change of a scale animation.
+- **animation:GetChange()**: Get the change of a scale animation.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### Path
+- **animation:SetPath(path)**: Set the path for a path animation.
+- **animation:SetSmoothPath(smooth)**: Set whether a path animation should use a smooth path.
+- **animation:Reset()**: Reset the animation to its pre-played state.
+- **animation:Finish()**: Set the animation to its finished state.
+
+### GIF
+- **animation:SetFrameDuration(duration)**: Set the frame duration for a GIF animation.
+- **animation:GetFrameDuration()**: Get the frame duration for a GIF animation.
+- **animation:SetFrames(list)**: Set the frames for a GIF animation.
+- **animation:GetFrames()**: Get the frames for a GIF animation.
 
 ## Group Controls
 - **animationGroup:Play()**: Play the animation group.
@@ -114,43 +186,42 @@ These easing types can be used with the SetEasing() method to customize the anim
 ## Animation Callbacks
 LibMotion provides callback functions that can be set to execute at specific animation milestones. These callbacks allow you to perform custom actions during the animation. Here are the available animation callbacks:
 
-**OnPlay**: Executed when the animation starts playing.
-**OnPause**: Executed when the animation is paused.
-**OnStop**: Executed when the animation is stopped.
-**OnResume**: Executed when the animation is resumed from a paused state.
-**OnReset**: Executed when the animation is reset.
-**OnFinished**: Executed when the animation completes its full duration.
+- **OnPlay**: Executed when the animation starts playing.
+- **OnPause**: Executed when the animation is paused.
+- **OnStop**: Executed when the animation is stopped.
+- **OnResume**: Executed when the animation is resumed from a paused state.
+- **OnReset**: Executed when the animation is reset.
+- **OnFinished**: Executed when the animation completes its full duration.
 
 To set a callback, use the following method:
 
 ```lua
-animation:SetCallback(event, func)
+animation:SetScript(event, func)
 ```
 
-Where `*event*` is the animation milestone event (e.g., "OnPlay") and `*func*` is the callback function.
+Where *event* is the animation milestone event (e.g., "OnPlay") and *func* is the callback function.
 
 ## Animation Group Callbacks
 Similar to animation callbacks, animation groups in LibMotion also support callbacks that can be set to execute at specific group milestones. These callbacks allow you to perform actions when the animation group reaches a certain state. Here are the available animation group callbacks:
 
-**OnPlay**: Executed when the animation group starts playing.
-**OnPause**: Executed when the animation group is paused.
-**OnStop**: Executed when the animation group is stopped.
-**OnFinished**: Executed when the animation group completes its full duration.
-**OnLoop**: Executed each time the animation group loops (if looping is enabled).
+- **OnPlay**: Executed when the animation group starts playing.
+- **OnPause**: Executed when the animation group is paused.
+- **OnStop**: Executed when the animation group is stopped.
+- **OnFinished**: Executed when the animation group completes its full duration.
+- **OnLoop**: Executed each time the animation group loops (if looping is enabled).
 
 To set a callback for an animation group, use the following method:
 
 ```lua
-animationGroup:SetCallback(event, func)
+animationGroup:SetScript(event, func)
 ```
 
-Where `*event*` is the animation group milestone event (e.g., "OnPlay") and `*func*` is the callback function.
+Where *event* is the animation group milestone event (e.g., "OnPlay") and *func* is the callback function.
 
 ## Example Usage
-Here's an example that demonstrates how to create an animation and use easing functions:
+Here's an example that demonstrates how to use SetScript:
 ```lua
 local animation = LibMotion:CreateAnimation(frame, "fade")
-animation:SetDuration(2.5) -- Set the duration of the animation to 2.5 seconds
 animation:SetScript("OnFinished", function(self)
     print("Animation complete!")
 end)
