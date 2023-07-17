@@ -41,7 +41,7 @@ local animationGroup = LibMotion:CreateAnimationGroup()
 - **animation:IsPlaying()**: Check if the animation is currently playing.
 - **animation:Pause()**: Pause the animation.
 - **animation:IsPaused()**: Check if the animation is currently paused.
-- **animation:Stop(reset)**: Stop the animation. Pass *reset* as *true* to reset the animation to its pre-played state.
+- **animation:Stop(reset)**: Stop the animation. Pass **reset** as **true** to reset the animation to its pre-played state.
 - **animation:IsStopped()**: Check if the animation is currently stopped.
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
@@ -90,7 +90,7 @@ In addition to these common animation controls, each animation type in LibMotion
 - **animation:SetColorType(region)**: Define what a color animation will colorize.
 - **animation:GetColorType()**: Get what a color animation will colorize.
 
-The *SetColorType* method allows you to specify the region or element that the color animation will affect. You can choose from the following options for the *region* parameter:
+The **SetColorType** method allows you to specify the region or element that the color animation will affect. You can choose from the following options for the *region* parameter:
 
 - **backdrop**: Colorize the backdrop of the parent frame.
 - **border**: Colorize the border of the parent frame.
@@ -174,7 +174,7 @@ The *SetColorType* method allows you to specify the region or element that the c
 - **out** (alias for outquadratic)
 - **inout** (alias for inoutquadratic)
 
-These easing types can be used with the SetEasing() method to customize the animation's movement.
+These easing types can be used with the animation:SetEasing() method to customize the animation's movement.
 
 ## Animation Callbacks
 LibMotion provides callback functions that can be set to execute at specific animation milestones. These callbacks allow you to perform custom actions during the animation. Here are the available animation callbacks:
@@ -192,7 +192,7 @@ To set a callback, use the following method:
 animation:SetScript(event, func)
 ```
 
-Where *event* is the animation milestone event (e.g., "OnPlay") and *func* is the callback function.
+Where **event** is the animation milestone event (e.g., "OnPlay") and **func** is the callback function.
 
 ## Animation Group Callbacks
 Similar to animation callbacks, animation groups in LibMotion also support callbacks that can be set to execute at specific group milestones. These callbacks allow you to perform actions when the animation group reaches a certain state. Here are the available animation group callbacks:
@@ -209,7 +209,7 @@ To set a callback for an animation group, use the following method:
 animationGroup:SetScript(event, func)
 ```
 
-Where *event* is the animation group milestone event (e.g., "OnPlay") and *func* is the callback function.
+Where **event** is the animation group milestone event (e.g., "OnPlay") and **func** is the callback function.
 
 ## Example Usage
 Here's an example that demonstrates how to use SetScript:
