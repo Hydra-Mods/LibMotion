@@ -135,6 +135,22 @@ local Prototype = {
 		return self.Progress
 	end,
 
+	SetStartDelay = function(self, delay)
+		self.StartDelaySetting = delay or 0
+	end,
+
+	GetStartDelay = function(self, delay)
+		return self.StartDelaySetting
+	end,
+
+	SetEndDelay = function(self, delay)
+		self.EndDelaySetting = delay or 0
+	end,
+
+	GetEndDelay = function(self, delay)
+		return self.EndDelaySetting
+	end,
+
 	SetOrder = function(self, order) -- animation:SetOrder(num) --> Set the play order of the animation, if it belongs to a group
 		self.Order = order or 1
 
@@ -550,20 +566,6 @@ local AnimMethods = {
 		end,
 	},
 
-	sleep = {
-		GetProgress = function(self) -- animation:GetProgress() --> Get the progress of a sleep animation
-			return self.Progress
-		end,
-
-		Reset = function(self) -- animation:Reset() --> Reset the animation to its pre-played state
-			self.Progress = 0
-		end,
-
-		Finish = function(self) -- animation:Finish() --> Set the animation to its finished state
-			self:Stop()
-		end,
-	},
-
 	scale = {
 		SetChange = function(self, scale) -- animation:SetChange(scale) --> Set the change of a scale animation
 			self.EndScaleSetting = scale or 0
@@ -661,6 +663,8 @@ function LibMotion:CreateAnimation(parent, animtype) -- LibMotion:CreateAnimatio
 	Animation.Duration = 0.3
 	Animation.Easing = "linear"
 	Animation.Order = 1
+	Animation.StartDelay = 0
+	Animation.EndDelay = 0
 
 	return Animation
 end
@@ -959,6 +963,8 @@ Initialize.move = function(self)
 	local A1, P, A2, X, Y = self.Parent:GetPoint()
 
 	self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 	self.A1 = A1
 	self.P = P
 	self.A2 = A2
@@ -977,9 +983,21 @@ Initialize.move = function(self)
 end
 
 Update.move = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1019,15 +1037,29 @@ Initialize.fade = function(self)
 	end
 
 	self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 	self.StartAlpha = self.Parent:GetAlpha() or 1
 	self.EndAlpha = self.EndAlphaSetting or 0
 	self.Change = self.EndAlpha - self.StartAlpha
 end
 
 Update.fade = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1057,15 +1089,29 @@ Initialize.height = function(self)
 	end
 
 	self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 	self.StartHeight = self.Parent:GetHeight() or 0
 	self.EndHeight = self.EndHeightSetting or 0
 	self.HeightChange = self.EndHeight - self.StartHeight
 end
 
 Update.height = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1095,15 +1141,31 @@ Initialize.width = function(self)
 	end
 
 	self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 	self.StartWidth = self.Parent:GetWidth() or 0
 	self.EndWidth = self.EndWidthSetting or 0
 	self.WidthChange = self.EndWidth - self.StartWidth
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 end
 
 Update.width = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1137,6 +1199,8 @@ Initialize.color = function(self)
 	end
 
 	self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 	self.ColorType = self.ColorType or "backdrop"
 	self.StartR, self.StartG, self.StartB = Get[self.ColorType](self.Parent)
 	self.EndR = self.EndRSetting or 1
@@ -1145,9 +1209,21 @@ Initialize.color = function(self)
 end
 
 Update.color = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
 	if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1177,15 +1253,29 @@ Initialize.progress = function(self)
 	end
 
 	self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 	self.StartValue = self.Parent:GetValue() or 0
 	self.EndValue = self.EndValueSetting or 0
 	self.ProgressChange = self.EndValue - self.StartValue
 end
 
 Update.progress = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
 	if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1208,34 +1298,6 @@ Update.progress = function(self, elapsed)
 	end
 end
 
--- Sleep
-Initialize.sleep = function(self)
-	self.Progress = 0
-end
-
-Update.sleep = function(self, elapsed)
-    self.Progress = self.Progress + (elapsed / self.Duration)
-
-	if (self.Progress >= 1) then
-        if (not self.Finished) then
-			for i = #Updater, 1, -1 do
-				if (Updater[i] == self) then
-					tremove(Updater, i)
-					break
-				end
-			end
-
-			self.Playing = false
-			self.Finished = true
-			self:FireEvent("OnFinished")
-
-			if self.Group then
-				self.Group:CheckOrder()
-			end
-		end
-	end
-end
-
 -- Number
 Initialize.number = function(self)
 	if self:IsPlaying() then
@@ -1243,6 +1305,8 @@ Initialize.number = function(self)
 	end
 
 	self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 
 	if (not self.StartNumber) then
 		self.StartNumber = tonumber(self.Parent:GetText()) or 0
@@ -1255,9 +1319,21 @@ Initialize.number = function(self)
 end
 
 Update.number = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
 	if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1287,15 +1363,29 @@ Initialize.scale = function(self)
 	end
 
 	self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
 	self.StartScale = self.Parent:GetScale() or 1
 	self.EndScale = self.EndScaleSetting or 1
 	self.ScaleChange = self.EndScale - self.StartScale
 end
 
 Update.scale = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
 	if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1354,6 +1444,8 @@ Initialize.path = function(self)
     local A1, P, A2, X, Y = self.Parent:GetPoint()
 
     self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
     self.A1 = A1
     self.P = P
     self.A2 = A2
@@ -1374,9 +1466,21 @@ Initialize.path = function(self)
 end
 
 Update.path = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1416,15 +1520,29 @@ Initialize.gif = function(self)
 	end
 
     self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
     self.FrameDuration = self.FrameDurationSetting or 0.1
     self.TextureFrames = self.TextureFramesSetting or {}
     self.TotalFrames = #self.TextureFrames
 end
 
 Update.gif = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.FrameDuration)
 
     if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
@@ -1457,15 +1575,29 @@ Initialize.typewriter = function(self)
 	end
 
     self.Progress = 0
+	self.StartDelay = self.StartDelaySetting or 0
+	self.EndDelay = self.EndDelaySetting or 0
     self.Text = self.Parent:GetText() or ""
     self.Length = self.Text:len()
     self.Index = 0
 end
 
 Update.typewriter = function(self, elapsed)
+	if (self.StartDelay > 0) then
+		self.StartDelay = self.StartDelay - elapsed
+
+		return
+	end
+
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
+		if (self.EndDelay > 0) then
+			self.EndDelay = self.EndDelay - elapsed
+
+			return
+		end
+
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
