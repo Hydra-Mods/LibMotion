@@ -64,7 +64,7 @@ local animationGroup = LibMotion:CreateAnimationGroup()
 
 In addition to these common animation controls, each animation type in LibMotion provides additional controls specific to that type. Here's an overview of the animation types and their additional controls:
 
-### Move
+# Move
 - **animation:SetOffset(x, y)**: Set the x and y offset of a movement animation.
 - **animation:GetOffset()**: Get the x and y offset of a movement animation.
 - **animation:SetSmoothPath(smooth)**: Set a movement animation to use a smooth path rather than linear.
@@ -78,19 +78,19 @@ In addition to these common animation controls, each animation type in LibMotion
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
 
-### Height
+# Height
 - **animation:SetChange(height)**: Set the change of a height animation.
 - **animation:GetChange()**: Get the change of a height animation.
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
 
-### Width
+# Width
 - **animation:SetChange(width)**: Set the change of a width animation.
 - **animation:GetChange()**: Get the change of a width animation.
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
 
-### Color
+# Color
 - **animation:SetChange(r, g, b)**: Set the RGB change of a color animation.
 - **animation:GetChange()**: Get the RGB change of a color animation.
 - **animation:SetColorType(region)**: Define what a color animation will colorize.
@@ -98,13 +98,13 @@ In addition to these common animation controls, each animation type in LibMotion
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
 
-### Progress
+# Progress
 - **animation:SetChange(value)**: Set the change of a progress animation.
 - **animation:GetChange()**: Get the change of a progress animation.
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
 
-### Number
+# Number
 - **animation:SetChange(value)**: Set the change of a number animation.
 - **animation:GetChange()**: Get the change of a number animation.
 - **animation:SetStart(value)**: Set the start value of a number animation.
@@ -116,19 +116,19 @@ In addition to these common animation controls, each animation type in LibMotion
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
 
-### Scale
+# Scale
 - **animation:SetChange(scale)**: Set the change of a scale animation.
 - **animation:GetChange()**: Get the change of a scale animation.
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
 
-### Path
+# Path
 - **animation:SetPath(path)**: Set the path for a path animation.
 - **animation:SetSmoothPath(smooth)**: Set whether a path animation should use a smooth path.
 - **animation:Reset()**: Reset the animation to its pre-played state.
 - **animation:Finish()**: Set the animation to its finished state.
 
-### GIF
+# GIF
 - **animation:SetFrameDuration(duration)**: Set the frame duration for a GIF animation.
 - **animation:GetFrameDuration()**: Get the frame duration for a GIF animation.
 - **animation:SetFrames(list)**: Set the frames for a GIF animation.
