@@ -51,7 +51,7 @@ local Prototype = {
 		self.Stopped = false
 		self.Finished = false
 
-		table.insert(Updater, self)
+		tinsert(Updater, self)
 
 		if (not Updater:GetScript("OnUpdate")) then
 			Updater:SetScript("OnUpdate", OnUpdate)
