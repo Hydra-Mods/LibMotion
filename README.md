@@ -31,11 +31,6 @@ LibMotion supports various animation types, including:
 - **gif**: GIF animation for creating animated textures.
 - **typewriter**: Typewriter animation for simulating typing effect.
 
-### Creating an Animation Group
-```lua
-local animationGroup = LibMotion:CreateAnimationGroup()
-```
-
 ## Animation Controls
 - **animation:Play()**: Play the animation.
 - **animation:IsPlaying()**: Check if the animation is currently playing.
@@ -128,6 +123,11 @@ The **SetColorType** method allows you to specify the region or element that the
 - **animation:GetFrameDuration()**: Get the frame duration for a GIF animation.
 - **animation:SetFrames(list)**: Set the frames for a GIF animation.
 - **animation:GetFrames()**: Get the frames for a GIF animation.
+
+### Creating an Animation Group
+```lua
+local animationGroup = LibMotion:CreateAnimationGroup()
+```
 
 ## Group Controls
 - **animationGroup:Play()**: Play the animation group.
