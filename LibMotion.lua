@@ -1,7 +1,7 @@
 -- LibMotion by Hydra
-local Version = 1.00
+local Version = 1.1
 
-if LibMotion and LibMotion.Version >= Version then -- An equal or higher version is already running
+if LibMotion and LibMotion.Version >= Version then
 	return
 end
 
@@ -45,607 +45,618 @@ local ColorGet = {
 }
 
 local OnUpdate = function(self, elapsed)
-	for i = #self, 1, -1 do
-		local Anim = self[i]
+    local Count = #self
+    local i = 1
 
-		if (Anim and Anim:IsPlaying()) then
-			Update[Anim.Type](Anim, elapsed)
-		end
+    while (i <= Count) do
+        local Anim = self[i]
+
+        if Anim and Anim:IsPlaying() then
+            Update[Anim.Type](Anim, elapsed)
+            i = i + 1
+        else
+            self[i] = self[Count]
+            self[Count] = nil
+            Count = Count - 1
+        end
+    end
+
+    if (Count == 0) then
+        self:SetScript("OnUpdate", nil)
+    end
+end
+
+local Prototype = {}
+
+function Prototype:Play()
+	if self.Paused then
+		self:FireEvent("onresume")
+	elseif Initialize[self.Type] then
+		Initialize[self.Type](self)
+		self:FireEvent("onplay")
 	end
 
-	if (#self == 0) then
-		self:SetScript("OnUpdate", nil)
+	self.Playing = true
+	self.Paused = false
+	self.Stopped = false
+	self.Finished = false
+
+	Updater[#Updater + 1] = self
+
+	if (not Updater:GetScript("OnUpdate")) then
+		Updater:SetScript("OnUpdate", OnUpdate)
 	end
 end
 
-local Prototype = {
-	Play = function(self)
-		if self.Paused then
-			self:FireEvent("OnResume")
-		elseif Initialize[self.Type] then
-			Initialize[self.Type](self)
-			self:FireEvent("OnPlay")
+function Prototype:IsPlaying()
+	return self.Playing
+end
+
+function Prototype:Pause()
+	for i = 1, #Updater do
+		if (Updater[i] == self) then
+			tremove(Updater, i)
+
+			break
+		end
+	end
+
+	self.Playing = false
+	self.Paused = true
+	self.Stopped = false
+	self.Finished = false
+
+	self:FireEvent("onpause")
+end
+
+function Prototype:IsPaused()
+	return self.Paused
+end
+
+function Prototype:Stop(reset)
+	for i = 1, #Updater do
+		if (Updater[i] == self) then
+			tremove(Updater, i)
+
+			break
+		end
+	end
+
+	self.Playing = false
+	self.Paused = false
+	self.Stopped = true
+	self.Finished = false
+	self.Progress = 0
+
+	if reset then
+		self:Reset()
+		self:FireEvent("onreset")
+	else
+		self:FireEvent("onstop")
+	end
+end
+
+function Prototype:IsStopped()
+	return self.Stopped
+end
+
+function Prototype:SetEasing(easing)
+	local Func = Easing[easing] or Easing[easing:lower()] or Easing["linear"]
+
+	if Func then
+		self.Easing = Func
+	end
+end
+
+function Prototype:GetEasing()
+	return self.Easing
+end
+
+function Prototype:SetDuration(duration)
+	self.Duration = duration or 0
+end
+
+function Prototype:GetDuration()
+	return self.Duration
+end
+
+function Prototype:SetProgress(progress)
+	self.Progress = progress
+end
+
+function Prototype:GetProgress()
+	return self.Progress
+end
+
+function Prototype:SetStartDelay(delay)
+	self.StartDelay = delay or 0
+end
+
+function Prototype:GetStartDelay()
+	return self.StartDelay
+end
+
+function Prototype:SetEndDelay(delay)
+	self.EndDelay = delay or 0
+end
+
+function Prototype:GetEndDelay()
+	return self.EndDelay
+end
+
+function Prototype:SetOrder(order)
+	self.Order = order or 1
+
+	if (self.Group and order > self.Group.MaxOrder) then
+		self.Group.MaxOrder = order
+	end
+end
+
+function Prototype:GetOrder()
+	return self.Order
+end
+
+function Prototype:SetParent(parent)
+	self.Parent = parent
+end
+
+function Prototype:GetParent()
+	return self.Parent
+end
+
+function Prototype:SetGroup(group)
+	if group then
+		self.Group = group
+
+		tinsert(group.Animations, self)
+
+		-- If we added :SetOrder before we :SetGroup, make sure the group will find its new highest order
+		if (self.Group and self.Order > self.Group.MaxOrder) then
+			self.Group.MaxOrder = self.Order
 		end
 
-		self.Playing = true
-		self.Paused = false
-		self.Stopped = false
-		self.Finished = false
-
-		tinsert(Updater, self)
-
-		if (not Updater:GetScript("OnUpdate")) then
-			Updater:SetScript("OnUpdate", OnUpdate)
-		end
-	end,
-
-	IsPlaying = function(self)
-		return self.Playing
-	end,
-
-	Pause = function(self)
-		for i = 1, #Updater do
-			if (Updater[i] == self) then
-				tremove(Updater, i)
-
-				break
-			end
-		end
-
-		self.Playing = false
-		self.Paused = true
-		self.Stopped = false
-		self.Finished = false
-		self:FireEvent("OnPause")
-	end,
-
-	IsPaused = function(self)
-		return self.Paused
-	end,
-
-	Stop = function(self, reset)
-		for i = 1, #Updater do
-			if (Updater[i] == self) then
-				tremove(Updater, i)
-
-				break
-			end
-		end
-
-		self.Playing = false
-		self.Paused = false
-		self.Stopped = true
-		self.Finished = false
-		self.Progress = 0
-
-		if reset then
-			self:Reset()
-			self:FireEvent("OnReset")
-		else
-			self:FireEvent("OnStop")
-		end
-	end,
-
-	IsStopped = function(self)
-		return self.Stopped
-	end,
-
-	SetEasing = function(self, easing)
-		easing = easing:lower()
-
-		self.Easing = Easing[easing] and easing or "linear"
-	end,
-
-	GetEasing = function(self)
-		return self.Easing
-	end,
-
-	SetDuration = function(self, duration)
-		self.Duration = duration or 0
-	end,
-
-	GetDuration = function(self)
-		return self.Duration
-	end,
-
-	SetProgress = function(self, progress)
-		self.Progress = progress
-	end,
-
-	GetProgress = function(self)
-		return self.Progress
-	end,
-
-	SetStartDelay = function(self, delay)
-		self.StartDelaySetting = delay or 0
-	end,
-
-	GetStartDelay = function(self, delay)
-		return self.StartDelaySetting
-	end,
-
-	SetEndDelay = function(self, delay)
-		self.EndDelaySetting = delay or 0
-	end,
-
-	GetEndDelay = function(self, delay)
-		return self.EndDelaySetting
-	end,
-
-	SetOrder = function(self, order)
-		self.Order = order or 1
-
-		if (self.Group and order > self.Group.MaxOrder) then
-			self.Group.MaxOrder = order
-		end
-	end,
-
-	GetOrder = function(self)
-		return self.Order
-	end,
-
-	SetParent = function(self, parent)
-		self.Parent = parent
-	end,
-
-	GetParent = function(self)
-		return self.Parent
-	end,
-
-	SetGroup = function(self, group)
-		if group then
-			self.Order = 1
-			self.Group = group
-
-			tinsert(group.Animations, self)
-
-			return self.Group
-		elseif self.Group then
-			for i = 1, #self.Group.Animations do
-				if (self.Group.Animations[i] == self) then
-					tremove(self.Group, i)
-				end
-			end
-
-			self.Group = nil
-		end
-	end,
-
-	GetGroup = function(self)
 		return self.Group
-	end,
-
-	SetScript = function(self, event, func)
-		event = event:lower()
-
-		if (not self.Events) then
-			self.Events = {}
-		end
-
-		self.Events[event] = func
-	end,
-
-	GetScript = function(self, event)
-		if (not self.Events) then
-			return
-		end
-
-		event = event:lower()
-
-		if self.Events[event] then
-			return self.Events[event]
-		end
-	end,
-
-	FireEvent = function(self, event)
-		if (not self.Events) then
-			return
-		end
-
-		event = event:lower()
-
-		if self.Events[event] then
-			self.Events[event](self, event)
-		end
-	end,
-}
-
-local GroupPrototype = {
-	Play = function(self)
-		if self.Playing then
-			return
-		end
-
-		for i = 1, #self.Animations do
-			if (self.Animations[i].Order == self.Order) then
-				self.Animations[i]:Play()
+	elseif self.Group then
+		for i = 1, #self.Group.Animations do
+			if (self.Group.Animations[i] == self) then
+				tremove(self.Group.Animations, i)
 			end
 		end
 
-		self.Playing = true
-		self.Paused = false
-		self.Stopped = false
+		self.Group = nil
+	end
+end
 
-		self:FireEvent("OnPlay")
-	end,
+function Prototype:GetGroup()
+	return self.Group
+end
 
-	IsPlaying = function(self)
-		return self.Playing
-	end,
+function Prototype:SetScript(event, func)
+    self.Events = self.Events or {}
+    self.Events[event:lower()] = func
+end
 
-	Pause = function(self)
-		for i = 1, #self.Animations do
-			if (self.Animations[i].Order == self.Order) then
-				self.Animations[i]:Pause()
+function Prototype:GetScript(event)
+	return self.Events and self.Events[event]
+end
+
+function Prototype:FireEvent(event)
+    local Function = self.Events and self.Events[event]
+
+    if Function then
+        Function(self, event)
+    end
+end
+
+local GroupPrototype = {}
+
+function GroupPrototype:Play()
+	if self.Playing then
+		return
+	end
+
+	for i = 1, #self.Animations do
+		if (self.Animations[i].Order == self.Order) then
+			self.Animations[i]:Play()
+		end
+	end
+
+	self.Playing = true
+	self.Paused = false
+	self.Stopped = false
+	self.Finished = false
+
+	self:FireEvent("onplay")
+end
+
+function GroupPrototype:IsPlaying()
+	return self.Playing
+end
+
+function GroupPrototype:Pause()
+	for i = 1, #self.Animations do
+		if (self.Animations[i].Order == self.Order) then
+			self.Animations[i]:Pause()
+		end
+	end
+
+	self.Playing = false
+	self.Paused = true
+	self.Stopped = false
+
+	self:FireEvent("onpause")
+end
+
+function GroupPrototype:IsPaused()
+	return self.Paused
+end
+
+function GroupPrototype:Stop()
+	for i = 1, #self.Animations do
+		self.Animations[i]:Stop()
+	end
+
+	self.Playing = false
+	self.Paused = false
+	self.Stopped = true
+	self.Order = 1
+
+	self:FireEvent("onstop")
+end
+
+function GroupPrototype:IsStopped()
+	return self.Stopped
+end
+
+function GroupPrototype:SetLooping(shouldLoop)
+	self.Looping = shouldLoop
+end
+
+function GroupPrototype:GetLooping()
+	return self.Looping
+end
+
+function GroupPrototype:SetScript(event, func)
+    self.Events = self.Events or {}
+    self.Events[event:lower()] = func
+end
+
+function GroupPrototype:GetScript(event)
+	return self.Events and self.Events[event]
+end
+
+function GroupPrototype:FireEvent(event)
+    if (not self.Events) then
+        return
+    end
+
+    local Function = self.Events[event]
+
+    if Function then
+        Function(self, event)
+    end
+end
+
+function GroupPrototype:UpdateOrder()
+	if (not self.Animations) then
+		return
+	end
+
+	-- Check if we're done all animations at the current order, then proceed to the next order.
+	local NumAtOrder = 0
+	local NumDoneAtOrder = 0
+	local Animations = self.Animations
+
+	for i = 1, #Animations do
+		local Anim = Animations[i]
+
+		if (Anim.Order == self.Order) then
+			NumAtOrder = NumAtOrder + 1
+
+			if (not Anim.Playing) then
+				NumDoneAtOrder = NumDoneAtOrder + 1
+			end
+		end
+	end
+
+	-- All the animations at x order finished, go to next order
+	if (NumAtOrder == NumDoneAtOrder) then
+		self.Order = self.Order + 1
+
+		-- We exceeded max order, reset to 1 and bail the function, or restart if we're looping
+		if (self.Order > self.MaxOrder) then
+			self.Order = 1
+
+			self:FireEvent("onfinished")
+
+			if (self.Stopped or not self.Looping) then
+				self.Playing = false
+
+				return
 			end
 		end
 
-		self.Playing = false
-		self.Paused = true
-		self.Stopped = false
+		self:FireEvent("onloop")
 
-		self:FireEvent("OnPause")
-	end,
+		for i = 1, #Animations do
+			local Anim = Animations[i]
 
-	IsPaused = function(self)
-		return self.Paused
-	end,
-
-	Stop = function(self)
-		for i = 1, #self.Animations do
-			self.Animations[i]:Stop()
-		end
-
-		self.Playing = false
-		self.Paused = false
-		self.Stopped = true
-		self.Order = 1
-
-		self:FireEvent("OnStop")
-	end,
-
-	IsStopped = function(self)
-		return self.Stopped
-	end,
-
-	SetLooping = function(self, shouldLoop)
-		self.Looping = shouldLoop
-	end,
-
-	GetLooping = function(self)
-		return self.Looping
-	end,
-
-	SetScript = function(self, event, func)
-		event = event:lower()
-
-		if (not self.Events) then
-			self.Events = {}
-		end
-
-		self.Events[event] = func
-	end,
-
-	GetScript = function(self, event)
-		if (not self.Events) then
-			return
-		end
-
-		event = event:lower()
-
-		if self.Events[event] then
-			return self.Events[event]
-		end
-	end,
-
-	FireEvent = function(self, event)
-		if (not self.Events) then
-			return
-		end
-
-		event = event:lower()
-
-		if self.Events[event] then
-			self.Events[event](self, event)
-		end
-	end,
-
-	CheckOrder = function(self)
-		if (not self.Animations) then
-			return
-		end
-
-		-- Check if we're done all animations at the current order, then proceed to the next order.
-		local NumAtOrder = 0
-		local NumDoneAtOrder = 0
-
-		for i = 1, #self.Animations do
-			if (self.Animations[i].Order == self.Order) then
-				NumAtOrder = NumAtOrder + 1
-
-				if (not self.Animations[i].Playing) then
-					NumDoneAtOrder = NumDoneAtOrder + 1
-				end
+			if (Anim.Order == self.Order) then
+				Anim:Play()
 			end
 		end
+	end
+end
 
-		-- All the animations at x order finished, go to next order
-		if (NumAtOrder == NumDoneAtOrder) then
-			self.Order = self.Order + 1
+-- Holds all animation methods
+local AnimMethods = {}
 
-			-- We exceeded max order, reset to 1 and bail the function, or restart if we're looping
-			if (self.Order > self.MaxOrder) then
-				self.Order = 1
+local move = {}
 
-				self:FireEvent("OnFinished")
+function move:SetOffset(x, y)
+	self.XSetting = x or 0
+	self.YSetting = y or 0
+end
 
-				if (self.Stopped or not self.Looping) then
-					self.Playing = false
+function move:GetOffset()
+	return self.XSetting, self.YSetting
+end
 
-					return
-				end
-			end
+function move:SetSmoothPath(smooth)
+	self.SmoothPathSetting = smooth
+end
 
-			self:FireEvent("OnLoop")
+function move:GetSmoothPath()
+	return self.SmoothPathSetting
+end
 
-			-- Play!
-			for i = 1, #self.Animations do
-				if (self.Animations[i].Order == self.Order) then
-					self.Animations[i]:Play()
-				end
-			end
-		end
-	end,
-}
+function move:Reset()
+	self.Progress = 0
+	self.Parent:ClearAllPoints()
+	self.Parent:SetPoint(self.A1, self.P, self.A2, self.StartX, self.StartY)
+end
 
-local AnimMethods = {
-	move = {
-		SetOffset = function(self, x, y)
-			self.XSetting = x or 0
-			self.YSetting = y or 0
-		end,
+function move:Finish()
+	self:Stop()
 
-		GetOffset = function(self)
-			return self.XSetting, self.YSetting
-		end,
+	self.Parent:ClearAllPoints()
+	self.Parent:SetPoint(self.A1, self.P, self.A2, self.EndX, self.EndY)
+end
 
-		SetSmoothPath = function(self, smooth)
-			self.SmoothPathSetting = smooth
-		end,
+AnimMethods.move = move
 
-		GetSmoothPath = function(self)
-			return self.SmoothPathSetting
-		end,
+local fade = {}
 
-		Reset = function(self)
-			self.Progress = 0
-			self.Parent:ClearAllPoints()
-			self.Parent:SetPoint(self.A1, self.P, self.A2, self.StartX, self.StartY)
-		end,
+function fade:SetChange(alpha)
+	self.EndAlphaSetting = alpha or 0
+end
 
-		Finish = function(self)
-			self:Stop()
+function fade:GetChange()
+	return self.EndAlphaSetting
+end
 
-			self.Parent:ClearAllPoints()
-			self.Parent:SetPoint(self.A1, self.P, self.A2, self.EndX, self.EndY)
-		end,
-	},
+function fade:Reset()
+	self.Progress = 0
+	self.Parent:SetAlpha(self.StartAlpha)
+end
 
-	fade = {
-		SetChange = function(self, alpha)
-			self.EndAlphaSetting = alpha or 0
-		end,
+function fade:Finish()
+	self:Stop()
+	self.Parent:SetAlpha(self.EndAlpha)
+end
 
-		GetChange = function(self)
-			return self.EndAlphaSetting
-		end,
+AnimMethods.fade = fade
 
-		Reset = function(self)
-			self.Progress = 0
-			self.Parent:SetAlpha(self.StartAlpha)
-		end,
+local height = {}
 
-		Finish = function(self)
-			self:Stop()
-			self.Parent:SetAlpha(self.EndAlpha)
-		end,
-	},
+function height:SetChange(height)
+	self.EndHeightSetting = height or 0
+end
 
-	height = {
-		SetChange = function(self, height)
-			self.EndHeightSetting = height or 0
-		end,
+function height:GetChange()
+	return self.EndHeightSetting
+end
 
-		GetChange = function(self)
-			return self.EndHeightSetting
-		end,
+function height:Reset()
+	self.Progress = 0
+	self.Parent:SetHeight(self.StartHeight)
+end
 
-		Reset = function(self)
-			self.Progress = 0
-			self.Parent:SetHeight(self.StartHeight)
-		end,
+function height:Finish()
+	self:Stop()
+	self.Parent:SetHeight(self.EndHeight)
+end
 
-		Finish = function(self)
-			self:Stop()
-			self.Parent:SetHeight(self.EndHeight)
-		end,
-	},
+AnimMethods.height = height
 
-	width = {
-		SetChange = function(self, width)
-			self.EndWidthSetting = width or 0
-		end,
+local width = {}
 
-		GetChange = function(self)
-			return self.EndWidthSetting
-		end,
+function width:SetChange(width)
+	self.EndWidthSetting = width or 0
+end
 
-		Reset = function(self)
-			self.Progress = 0
-			self.Parent:SetWidth(self.StartWidth)
-		end,
+function width:GetChange()
+	return self.EndWidthSetting
+end
 
-		Finish = function(self)
-			self:Stop()
-			self.Parent:SetWidth(self.EndWidth)
-		end,
-	},
+function width:Reset()
+	self.Progress = 0
+	self.Parent:SetWidth(self.StartWidth)
+end
 
-	color = {
-		SetChange = function(self, r, g, b)
-			self.EndRSetting = r or 1
-			self.EndGSetting = g or 1
-			self.EndBSetting = b or 1
-		end,
+function width:Finish()
+	self:Stop()
+	self.Parent:SetWidth(self.EndWidth)
+end
 
-		GetChange = function(self)
-			return self.EndRSetting, self.EndGSetting, self.EndBSetting
-		end,
+AnimMethods.width = width
 
-		SetColorType = function(self, region)
-			region = region:lower()
+local color = {}
 
-			self.ColorType = ColorSet[region] and region or "border"
-		end,
+function color:SetChange(r, g, b)
+	self.EndRSetting = r or 1
+	self.EndGSetting = g or 1
+	self.EndBSetting = b or 1
+end
 
-		GetColorType = function(self)
-			return self.ColorType
-		end,
+function color:GetChange()
+	return self.EndRSetting, self.EndGSetting, self.EndBSetting
+end
 
-		Reset = function(self)
-			self.Progress = 0
-			ColorSet[self.ColorType](self.Parent, self.StartR, self.StartG, self.StartB)
-		end,
+function color:SetColorType(region)
+	region = region:lower()
 
-		Finish = function(self)
-			self:Stop()
-			ColorSet[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
-		end,
-	},
+	self.ColorType = ColorSet[region] and region or "border"
+end
 
-	progress = {
-		SetChange = function(self, value)
-			self.EndValueSetting = value or 0
-		end,
+function color:GetColorType()
+	return self.ColorType
+end
 
-		GetChange = function(self)
-			return self.EndValueSetting
-		end,
+function color:Reset()
+	self.Progress = 0
+	ColorSet[self.ColorType](self.Parent, self.StartR, self.StartG, self.StartB)
+end
 
-		Reset = function(self)
-			self.Progress = 0
-			self.Parent:SetValue(self.StartValue)
-		end,
+function color:Finish()
+	self:Stop()
+	ColorSet[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
+end
 
-		Finish = function(self)
-			self:Stop()
-			self.Parent:SetValue(self.EndValue)
-		end,
-	},
+AnimMethods.color = color
 
-	number = {
-		SetChange = function(self, value)
-			self.EndNumberSetting = value or 0
-		end,
+local progress = {}
 
-		GetChange = function(self)
-			return self.EndNumberSetting
-		end,
+function progress:SetChange(value)
+	self.EndValueSetting = value or 0
+end
 
-		SetStart = function(self, value)
-			self.StartNumber = value
-		end,
+function progress:GetChange()
+	return self.EndValueSetting
+end
 
-		GetStart = function(self)
-			return self.StartNumber
-		end,
+function progress:Reset()
+	self.Progress = 0
+	self.Parent:SetValue(self.StartValue)
+end
 
-		SetPrefix = function(self, text)
-			self.Prefix = text or ""
-		end,
+function progress:Finish()
+	self:Stop()
+	self.Parent:SetValue(self.EndValue)
+end
 
-		GetPrefix = function(self)
-			return self.Prefix
-		end,
+AnimMethods.progress = progress
 
-		SetPostfix = function(self, text)
-			self.Postfix = text or ""
-		end,
+local number = {}
 
-		GetPostfix = function(self)
-			return self.Postfix
-		end,
+function number:SetChange(value)
+	self.EndNumberSetting = value or 0
+end
 
-		Reset = function(self)
-			self.Progress = 0
-			self.Parent:SetText(self.StartNumber)
-		end,
+function number:GetChange()
+	return self.EndNumberSetting
+end
 
-		Finish = function(self)
-			self:Stop()
-			self.Parent:SetText(self.EndNumber)
-		end,
-	},
+function number:SetStart(value)
+	self.StartNumber = value
+end
 
-	scale = {
-		SetChange = function(self, scale)
-			self.EndScaleSetting = scale or 0
-		end,
+function number:GetStart()
+	return self.StartNumber
+end
 
-		GetChange = function(self)
-			return self.EndScaleSetting
-		end,
+function number:SetPrefix(text)
+	self.Prefix = text or ""
+end
 
-		Reset = function(self)
-			self.Progress = 0
-		end,
+function number:GetPrefix()
+	return self.Prefix
+end
 
-		Finish = function(self)
-			self:Stop()
-			self.Parent:SetScale(self.EndScale)
-		end,
-	},
+function number:SetPostfix(text)
+	self.Postfix = text or ""
+end
 
-	path = {
-		SetPath = function(self, path)
-			self.PathSetting = path
-		end,
-		
-		GetPath = function(self)
-			return self.PathSetting
-		end,
+function number:GetPostfix()
+	return self.Postfix
+end
 
-		SetSmoothPath = function(self, smooth)
-			self.SmoothPathSetting = smooth
-		end,
-		
-		GetSmoothPath = function(self)
-			return self.SmoothPathSetting
-		end,
-	},
+function number:Reset()
+	self.Progress = 0
+	self.Parent:SetText(self.StartNumber)
+end
 
-	gif = {
-		SetFrameDuration = function(self, duration)
-			self.FrameDurationSetting = duration
-		end,
+function number:Finish()
+	self:Stop()
+	self.Parent:SetText(self.EndNumber)
+end
 
-		GetFrameDuration = function(self)
-			return self.FrameDurationSetting
-		end,
+AnimMethods.number = number
 
-		SetFrames = function(self, list)
-			self.TextureFramesSetting = list
-		end,
+local scale = {}
 
-		GetFrames = function(self)
-			return self.TextureFramesSetting
-		end,
-	},
+function scale:SetChange(scale)
+	self.EndScaleSetting = scale or 0
+end
 
-	typewriter = {
+function scale:GetChange()
+	return self.EndScaleSetting
+end
 
-	},
-}
+function scale:Reset()
+	self.Progress = 0
+end
+
+function scale:Finish()
+	self:Stop()
+	self.Parent:SetScale(self.EndScale)
+end
+
+AnimMethods.scale = scale
+
+local path = {}
+
+function path:SetPath(path)
+	self.PathSetting = path
+end
+
+function path:GetPath()
+	return self.PathSetting
+end
+
+function path:SetSmoothPath(smooth)
+	self.SmoothPathSetting = smooth
+end
+
+function path:GetSmoothPath()
+	return self.SmoothPathSetting
+end
+
+AnimMethods.path = path
+
+local gif = {}
+
+function gif:SetFrameDuration(duration)
+	self.FrameDurationSetting = duration
+end
+
+function gif:GetFrameDuration()
+	return self.FrameDurationSetting
+end
+
+function gif:SetFrames(list)
+	self.TextureFramesSetting = list
+end
+
+function gif:GetFrames()
+	return self.TextureFramesSetting
+end
+
+AnimMethods.gif = gif
+
+local typewriter = {}
+
+AnimMethods.typewriter = typewriter
 
 -- Library functions
 
@@ -690,10 +701,12 @@ function LibMotion:CreateAnimation(parent, animtype)
 	Animation.Finished = false
 	Animation.Looping = false
 	Animation.Duration = 0.3
-	Animation.Easing = "linear"
+	Animation.Easing = Easing["linear"]
 	Animation.Order = 1
 	Animation.StartDelay = 0
+	Animation.StartDelayInt = 0
 	Animation.EndDelay = 0
+	Animation.EndDelayInt = 0
 
 	return Animation
 end
@@ -880,23 +893,23 @@ end
 
 -- Bounce easing
 Easing.outbounce = function(t, b, c, d)
-	t = t / d
+    t = t / d
 
-	if (t < (1 / 2.75)) then
-		return c * (7.5625 * t * t) + b
-	elseif (t < (2 / 2.75)) then
-		t = t - (1.5 / 2.75)
+    local t2 = t * t
+    local factor = 7.5625 * t2
 
-		return c * (7.5625 * t * t + 0.75) + b
-	elseif (t < (2.5 / 2.75)) then
-		t = t - (2.25 / 2.75)
-
-		return c * (7.5625 * t * t + 0.9375) + b
-	else
-		t = t - (2.625 / 2.75)
-
-		return c * (7.5625 * t * t + 0.984375) + b
-	end
+    if t < (1 / 2.75) then
+        return c * factor + b
+    elseif t < (2 / 2.75) then
+        t = t - (1.5 / 2.75)
+        return c * (factor + 0.75) + b
+    elseif t < (2.5 / 2.75) then
+        t = t - (2.25 / 2.75)
+        return c * (factor + 0.9375) + b
+    else
+        t = t - (2.625 / 2.75)
+        return c * (factor + 0.984375) + b
+    end
 end
 
 Easing.inbounce = function(t, b, c, d)
@@ -992,17 +1005,17 @@ Initialize.move = function(self)
 	local A1, P, A2, X, Y = self.Parent:GetPoint()
 
 	self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
 	self.A1 = A1
 	self.P = P
 	self.A2 = A2
 	self.StartX = X
-	self.EndX = X + self.XSetting or 0
+	self.EndX = X + (self.XSetting or 0)
 	self.StartY = Y
-	self.EndY = Y + self.YSetting or 0
+	self.EndY = Y + (self.YSetting or 0)
 	self.XChange = self.EndX - self.StartX
 	self.YChange = self.EndY - self.StartY
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 
 	if self.SmoothPathSetting then
 		if (self.XChange == 0 or self.YChange == 0) then -- check if we're valid to be rounded
@@ -1012,8 +1025,8 @@ Initialize.move = function(self)
 end
 
 Update.move = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1021,8 +1034,8 @@ Update.move = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1030,7 +1043,8 @@ Update.move = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1038,14 +1052,14 @@ Update.move = function(self, elapsed)
 			self.Parent:SetPoint(self.A1, self.P, self.A2, self.EndX, self.EndY)
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
     else
-        local EasingValue = Easing[self.Easing](self.Progress, 0, 1, 1)
+        local EasingValue = self.Easing(self.Progress, 0, 1, 1)
 
         if self.SmoothPathSetting then
             self.XOffset = self.StartX + self.XChange * EasingValue
@@ -1066,16 +1080,16 @@ Initialize.fade = function(self)
 	end
 
 	self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
 	self.StartAlpha = self.Parent:GetAlpha() or 1
 	self.EndAlpha = self.EndAlphaSetting or 0
 	self.Change = self.EndAlpha - self.StartAlpha
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.fade = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1083,8 +1097,8 @@ Update.fade = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1092,7 +1106,8 @@ Update.fade = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1100,14 +1115,14 @@ Update.fade = function(self, elapsed)
             self.Parent:SetAlpha(self.EndAlpha)
             self.Playing = false
             self.Finished = true
-            self:FireEvent("OnFinished")
+            self:FireEvent("onfinished")
 
             if self.Group then
-                self.Group:CheckOrder()
+                self.Group:UpdateOrder()
             end
         end
     else
-        self.Parent:SetAlpha(Easing[self.Easing](self.Progress, self.StartAlpha, self.Change, 1))
+        self.Parent:SetAlpha(self.Easing(self.Progress, self.StartAlpha, self.Change, 1))
     end
 end
 
@@ -1118,16 +1133,16 @@ Initialize.height = function(self)
 	end
 
 	self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
 	self.StartHeight = self.Parent:GetHeight() or 0
 	self.EndHeight = self.EndHeightSetting or 0
 	self.HeightChange = self.EndHeight - self.StartHeight
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.height = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1135,8 +1150,8 @@ Update.height = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1144,7 +1159,8 @@ Update.height = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1152,14 +1168,14 @@ Update.height = function(self, elapsed)
 			self.Parent:SetHeight(self.EndHeight)
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
     else
-        self.Parent:SetHeight(Easing[self.Easing](self.Progress, self.StartHeight, self.HeightChange, 1))
+        self.Parent:SetHeight(self.Easing(self.Progress, self.StartHeight, self.HeightChange, 1))
     end
 end
 
@@ -1170,18 +1186,16 @@ Initialize.width = function(self)
 	end
 
 	self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
 	self.StartWidth = self.Parent:GetWidth() or 0
 	self.EndWidth = self.EndWidthSetting or 0
 	self.WidthChange = self.EndWidth - self.StartWidth
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.width = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1189,8 +1203,8 @@ Update.width = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1198,7 +1212,8 @@ Update.width = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1206,14 +1221,14 @@ Update.width = function(self, elapsed)
 			self.Parent:SetWidth(self.EndWidth)
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
 	else
-		self.Parent:SetWidth(Easing[self.Easing](self.Progress, self.StartWidth, self.WidthChange, 1))
+		self.Parent:SetWidth(self.Easing(self.Progress, self.StartWidth, self.WidthChange, 1))
 	end
 end
 
@@ -1228,18 +1243,18 @@ Initialize.color = function(self)
 	end
 
 	self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
 	self.ColorType = self.ColorType or "backdrop"
 	self.StartR, self.StartG, self.StartB = ColorGet[self.ColorType](self.Parent)
 	self.EndR = self.EndRSetting or 1
 	self.EndG = self.EndGSetting or 1
 	self.EndB = self.EndBSetting or 1
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.color = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1247,8 +1262,8 @@ Update.color = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
 	if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1256,7 +1271,8 @@ Update.color = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1264,14 +1280,14 @@ Update.color = function(self, elapsed)
 			ColorSet[self.ColorType](self.Parent, self.EndR, self.EndG, self.EndB)
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
 	else
-		ColorSet[self.ColorType](self.Parent, InterpolateRGB(Easing[self.Easing](self.Progress, 0, 1, 1), self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
+		ColorSet[self.ColorType](self.Parent, InterpolateRGB(self.Easing(self.Progress, 0, 1, 1), self.StartR, self.StartG, self.StartB, self.EndR, self.EndG, self.EndB))
 	end
 end
 
@@ -1282,16 +1298,16 @@ Initialize.progress = function(self)
 	end
 
 	self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
 	self.StartValue = self.Parent:GetValue() or 0
 	self.EndValue = self.EndValueSetting or 0
 	self.ProgressChange = self.EndValue - self.StartValue
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.progress = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1299,8 +1315,8 @@ Update.progress = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
 	if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1308,7 +1324,8 @@ Update.progress = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1316,14 +1333,14 @@ Update.progress = function(self, elapsed)
 			self.Parent:SetValue(self.EndValue)
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
 	else
-		self.Parent:SetValue(Easing[self.Easing](self.Progress, self.StartValue, self.ProgressChange, 1))
+		self.Parent:SetValue(self.Easing(self.Progress, self.StartValue, self.ProgressChange, 1))
 	end
 end
 
@@ -1334,8 +1351,6 @@ Initialize.number = function(self)
 	end
 
 	self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
 
 	if (not self.StartNumber) then
 		self.StartNumber = tonumber(self.Parent:GetText()) or 0
@@ -1345,11 +1360,13 @@ Initialize.number = function(self)
 	self.NumberChange = self.EndNumberSetting - self.StartNumber
 	self.Prefix = self.Prefix or ""
 	self.Postfix = self.Postfix or ""
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.number = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1357,8 +1374,8 @@ Update.number = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
 	if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1366,22 +1383,24 @@ Update.number = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
 
-			self.Parent:SetText(format("%s%d%s", self.Prefix, floor(self.EndNumber), self.Postfix))
+			self.Parent:SetText(self.Prefix .. floor(Num) .. self.Postfix)
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
 	else
-		self.Parent:SetText(format("%s%d%s", self.Prefix, floor(Easing[self.Easing](self.Progress, self.StartNumber, self.NumberChange, 1)), self.Postfix))
+		local Num = floor(self.Easing(self.Progress, self.StartNumber, self.NumberChange, 1))
+		self.Parent:SetText(self.Prefix .. Num .. self.Postfix)
 	end
 end
 
@@ -1392,16 +1411,16 @@ Initialize.scale = function(self)
 	end
 
 	self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
 	self.StartScale = self.Parent:GetScale() or 1
 	self.EndScale = self.EndScaleSetting or 1
 	self.ScaleChange = self.EndScale - self.StartScale
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.scale = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1409,8 +1428,8 @@ Update.scale = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
 	if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1418,7 +1437,8 @@ Update.scale = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1426,14 +1446,14 @@ Update.scale = function(self, elapsed)
 			self.Parent:SetScale(self.EndScale)
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
 	else
-		self.Parent:SetScale(Easing[self.Easing](self.Progress, self.StartScale, self.ScaleChange, 1))
+		self.Parent:SetScale(self.Easing(self.Progress, self.StartScale, self.ScaleChange, 1))
 	end
 end
 
@@ -1473,13 +1493,13 @@ Initialize.path = function(self)
     local A1, P, A2, X, Y = self.Parent:GetPoint()
 
     self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
     self.A1 = A1
     self.P = P
     self.A2 = A2
     self.StartX = X
     self.StartY = Y
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
     self.Path = self.PathSetting or {}
     self.SmoothPath = self.SmoothPathSetting and GenerateSmoothPath(self.Path) or self.Path
     self.PathLength = #self.SmoothPath - 1
@@ -1495,8 +1515,8 @@ Initialize.path = function(self)
 end
 
 Update.path = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1504,8 +1524,8 @@ Update.path = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1513,7 +1533,8 @@ Update.path = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1521,14 +1542,14 @@ Update.path = function(self, elapsed)
 			self.Parent:SetPoint(self.A1, self.P, self.A2, self.StartX + self.SmoothPath[#self.SmoothPath][1], self.StartY + self.SmoothPath[#self.SmoothPath][2])
 			self.Playing = false
 			self.Finished = false
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
     else
-        local CurrPathLength = self.PathLength * Easing[self.Easing](self.Progress, 0, 1, 1)
+        local CurrPathLength = self.PathLength * self.Easing(self.Progress, 0, 1, 1)
         local SegmentIndex = floor(CurrPathLength) + 1
         local SegmentTime = CurrPathLength - floor(CurrPathLength)
 
@@ -1549,16 +1570,16 @@ Initialize.gif = function(self)
 	end
 
     self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
     self.FrameDuration = self.FrameDurationSetting or 0.1
     self.TextureFrames = self.TextureFramesSetting or {}
     self.TotalFrames = #self.TextureFrames
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.gif = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1566,8 +1587,8 @@ Update.gif = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.FrameDuration)
 
     if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1575,17 +1596,18 @@ Update.gif = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
 
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
     else
@@ -1604,16 +1626,16 @@ Initialize.typewriter = function(self)
 	end
 
     self.Progress = 0
-	self.StartDelay = self.StartDelaySetting or 0
-	self.EndDelay = self.EndDelaySetting or 0
     self.Text = self.Parent:GetText() or ""
     self.Length = self.Text:len()
     self.Index = 0
+	self.StartDelayInt = 0
+	self.EndDelayInt = 0
 end
 
 Update.typewriter = function(self, elapsed)
-	if (self.StartDelay > 0) then
-		self.StartDelay = self.StartDelay - elapsed
+	if ((self.StartDelay > 0) and (self.StartDelayInt < self.StartDelay)) then
+		self.StartDelayInt = self.StartDelayInt + elapsed
 
 		return
 	end
@@ -1621,8 +1643,8 @@ Update.typewriter = function(self, elapsed)
     self.Progress = self.Progress + (elapsed / self.Duration)
 
     if (self.Progress >= 1) then
-		if (self.EndDelay > 0) then
-			self.EndDelay = self.EndDelay - elapsed
+		if ((self.EndDelay > 0) and (self.EndDelay > self.EndDelayInt)) then
+			self.EndDelayInt = self.EndDelayInt + elapsed
 
 			return
 		end
@@ -1630,7 +1652,8 @@ Update.typewriter = function(self, elapsed)
         if (not self.Finished) then
 			for i = #Updater, 1, -1 do
 				if (Updater[i] == self) then
-					tremove(Updater, i)
+					Updater[i] = Updater[#Updater]
+					Updater[#Updater] = nil
 					break
 				end
 			end
@@ -1638,14 +1661,14 @@ Update.typewriter = function(self, elapsed)
 			self.Parent:SetText(self.Text)
 			self.Playing = false
 			self.Finished = true
-			self:FireEvent("OnFinished")
+			self:FireEvent("onfinished")
 
 			if self.Group then
-				self.Group:CheckOrder()
+				self.Group:UpdateOrder()
 			end
 		end
     else
-        local CharToShow = floor(Easing[self.Easing](self.Progress, 0, 1, 1) * self.Length) - self.Index
+        local CharToShow = floor(self.Easing(self.Progress, 0, 1, 1) * self.Length) - self.Index
 
         if (CharToShow > 0) then
             self.Index = self.Index + CharToShow
